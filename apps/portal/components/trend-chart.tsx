@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatBucket, formatCount } from '@/lib/format';
+import { formatBucket, formatCount, formatTick } from '@/lib/format';
 
 export interface TrendSeries {
   key: string;
@@ -101,7 +101,7 @@ export function TrendChart({
         tickLine={false}
         axisLine={false}
         allowDecimals={false}
-        tickFormatter={(v: number) => formatCount(v)}
+        tickFormatter={(v: number) => formatTick(v)}
       />
     ),
     tooltip: (

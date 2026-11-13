@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { formatCount, formatTick } from '@/lib/format';
 import { parseRange } from '@/lib/ranges';
 import { fillSeries, parseBucket } from '@/lib/series';
 import {
@@ -157,5 +158,14 @@ describe('Stellar ID checks', () => {
       unconfigured: [],
     });
     if (!result.found) expect(describeMissing('account', result)).toMatch(/couldn't reach/);
+  });
+});
+
+describe('number formatting', () => {
+  it('keeps counts exact below 10,000 and axis ticks short from 1,000', () => {
+    expect(formatCount(9_000)).toBe('9,000');
+    expect(formatCount(36_600)).toBe('36.6K');
+    expect(formatTick(9_000)).toBe('9K');
+    expect(formatTick(850)).toBe('850');
   });
 });

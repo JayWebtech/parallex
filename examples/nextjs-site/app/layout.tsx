@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Script from 'next/script';
 import type { ReactNode } from 'react';
-import { parallaxScript } from './parallax';
+import { parallaxScript, sameOriginConfig } from './parallax';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -37,6 +37,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </header>
         <main>{children}</main>
         <footer>Example site for Parallax · fictional wallet, no real funds · MIT</footer>
+        {sameOriginConfig && (
+          <Script id="parallax-config" strategy="beforeInteractive">
+            {sameOriginConfig}
+          </Script>
+        )}
         <Script strategy="afterInteractive" {...parallaxScript} />
       </body>
     </html>

@@ -85,11 +85,9 @@ describe.each(PROJECT_ROUTES)('$method $file', (route) => {
     const b = route.path(bobProject, { keyId: bobRouteKey });
     expect((await bob.request(route.method, a)).status).toBe(404);
     expect((await alice.request(route.method, b)).status).toBe(404);
-    if (route.method === 'DELETE') {
-      // Own project, but the other tenant's key ID.
-      const mixed = route.path(aliceProject, { keyId: bobRouteKey });
-      expect((await alice.request(route.method, mixed)).status).toBe(404);
-    }
+    // Own project, but the other tenant's key ID (only for routes addressing a key).
+    const mixed = route.path(aliceProject, { keyId: bobRouteKey });
+    if (mixed !== a) expect((await alice.request(route.method, mixed)).status).toBe(404);
   });
 
   it('answers unknown and malformed IDs with 404', async () => {

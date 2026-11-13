@@ -26,6 +26,8 @@ describe('example sites', () => {
       expect(tag, page).toContain(`integrity="${tracker.sha384}"`);
       expect(tag, page).toContain('crossorigin="anonymous"');
       expect(tag, page).toContain('data-exclude-search="true"');
+      // Same-origin snippet: without a host URL the tracker would post to /p/v…/p/e.
+      expect(html, page).toContain('window.umamiConfig = { hostUrl: location.origin };');
       expect(tag, page).toContain(`data-website-id="${demoSite('static-site').websiteId}"`);
     }
   });
@@ -42,6 +44,7 @@ describe('example sites', () => {
     expect(src).toContain(`'${tracker.sha384}'`);
     expect(src).toContain(`'${demoSite('nextjs-site').websiteId}'`);
     expect(src).toContain(`'data-exclude-search': 'true'`);
+    expect(src).toContain('window.umamiConfig = { hostUrl: location.origin };');
   });
 
   it('nextjs-site: the demo traffic only visits pages that exist', () => {

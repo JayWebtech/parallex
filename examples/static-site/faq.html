@@ -9,8 +9,13 @@
       Parallax tracking snippet. For your own site, copy the snippet from your
       project's "Snippet" page instead: it points at your Parallax origin and
       carries your website ID. This copy uses a same-origin path because the
-      public demo serves this site from Parallax itself (/examples/static-site/).
+      public demo serves this site from Parallax itself (/examples/static-site/),
+      so the inline line below tells the tracker where to send events (a real
+      snippet does that with data-host-url).
     -->
+    <script>
+      window.umamiConfig = { hostUrl: location.origin };
+    </script>
     <script
       defer
       src="/p/v1.0.0/px.js"

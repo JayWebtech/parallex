@@ -7,6 +7,15 @@
  */
 const origin = process.env.NEXT_PUBLIC_PARALLAX_ORIGIN ?? '';
 
+/**
+ * Without an origin (the demo serves this site from Parallax itself), the
+ * tracker must be told to send events to this page's origin: by default it
+ * would derive the endpoint from the script's folder (/p/v1.0.0/).
+ */
+export const sameOriginConfig = origin
+  ? null
+  : 'window.umamiConfig = { hostUrl: location.origin };';
+
 export const parallaxScript = {
   src: `${origin}/p/v1.0.0/px.js`,
   integrity: 'sha384-+Pi9N7EYNykKt2zdDjFh27h3d4fwMqYGUedJYtMj9d78zYeL+7CqMBRe1E4Gt8ox',

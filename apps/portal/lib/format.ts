@@ -5,6 +5,11 @@ export function formatCount(n: number): string {
   return n >= 10_000 ? compact.format(n) : whole.format(Math.round(n));
 }
 
+/** Axis ticks: compact from 1,000 up ("9K", "12K"), so labels fit a narrow axis. */
+export function formatTick(n: number): string {
+  return n >= 1_000 ? compact.format(n) : whole.format(Math.round(n));
+}
+
 export function formatPercent(ratio: number): string {
   return `${(ratio * 100).toFixed(ratio > 0 && ratio < 0.1 ? 1 : 0)}%`;
 }
