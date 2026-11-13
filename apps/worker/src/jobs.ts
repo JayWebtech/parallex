@@ -89,7 +89,7 @@ const LOCK_KEY = 'parallax-worker';
 export async function tick(
   pool: DbHandle['pool'],
   nowMs: number,
-  opts: { retention: boolean },
+  opts: { retention: boolean; purge?: { umami: WebsiteDeleter; graceHours: number } },
 ): Promise<boolean> {
   const client = await pool.connect();
   try {
@@ -102,6 +102,8 @@ export async function tick(
       await rollupHours(client, nowMs);
       await rollupDays(client, nowMs);
       if (opts.retention) await enforceRetention(client, nowMs);
+      if (opts.purge)
+        await purgeRemovedProjects(pool, opts.purge.umami, nowMs, opts.purge.graceHours);
     } finally {
       await client.query('SELECT pg_advisory_unlock(hashtext($1))', [LOCK_KEY]);
     }
@@ -109,4 +111,73 @@ export async function tick(
   } finally {
     client.release();
   }
+}
+
+/** What the purge job needs from Umami (the real client, or a fake in tests). */
+export interface WebsiteDeleter {
+  deleteWebsite(websiteId: string): Promise<void>;
+}
+
+/**
+ * Permanently deletes data of projects removed more than `graceHours` ago, or
+ * deleted by their owner ("delete all my project's data": no grace period):
+ * the Umami website (all its events and sessions), then API rollups, warnings
+ * and ingest keys. The project row stays as a tombstone with `purged_at` and
+ * an audit entry. A project whose Umami deletion fails is retried next tick.
+ */
+export async function purgeRemovedProjects(
+  pool: DbHandle['pool'],
+  umami: WebsiteDeleter,
+  nowMs: number,
+  graceHours: number,
+  batch = 20,
+): Promise<string[]> {
+  const { rows } = await pool.query<{ id: string; name: string; umami_website_id: string | null }>(
+    `SELECT id, name, umami_website_id FROM portal.project
+      WHERE status = 'removed' AND purged_at IS NULL
+        AND (removed_at <= to_timestamp($1 / 1000.0) OR removed_by = 'owner')
+      LIMIT $2`,
+    [nowMs - graceHours * HOUR, batch],
+  );
+  const purged: string[] = [];
+  for (const p of rows) {
+    if (p.umami_website_id) {
+      try {
+        await umami.deleteWebsite(p.umami_website_id);
+      } catch (error) {
+        // Already gone is fine; anything else: try again next tick.
+        if ((error as { status?: number }).status !== 404) continue;
+      }
+    }
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const table of [
+        'request_minute',
+        'request_hour',
+        'request_day',
+        'ingest_warning_day',
+        'ingest_key',
+      ]) {
+        await client.query(`DELETE FROM api_metrics.${table} WHERE project_id = $1`, [p.id]);
+      }
+      await client.query(
+        `UPDATE portal.project SET purged_at = now(), umami_website_id = NULL WHERE id = $1`,
+        [p.id],
+      );
+      await client.query(
+        `INSERT INTO portal.audit_log (actor_email, action, target_type, target_id, details)
+         VALUES ('system:worker', 'project.purge', 'project', $1, $2)`,
+        [p.id, JSON.stringify({ name: p.name, umamiWebsiteDeleted: Boolean(p.umami_website_id) })],
+      );
+      await client.query('COMMIT');
+      purged.push(p.id);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  return purged;
 }

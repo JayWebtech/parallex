@@ -12,6 +12,8 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Deps } from '@/lib/deps';
 import { NotFoundError } from '@/lib/errors';
+import { getApiAnalytics } from '@/lib/api-analytics';
+import { createIngestKey, listIngestKeys } from '@/lib/ingest-keys';
 import { createProject, getProject, getSnippet, listProjects } from '@/lib/projects';
 import { parseRange } from '@/lib/ranges';
 import { getWebAnalytics } from '@/lib/web-analytics';
@@ -44,6 +46,9 @@ const scopedCalls = {
   getProject: (userId: string, id: string) => getProject(deps, userId, id),
   getSnippet: (userId: string, id: string) => getSnippet(deps, userId, id),
   getWebAnalytics: (userId: string, id: string) => getWebAnalytics(deps, userId, id, range),
+  getApiAnalytics: (userId: string, id: string) => getApiAnalytics(deps, userId, id, range),
+  listIngestKeys: (userId: string, id: string) => listIngestKeys(deps, userId, id),
+  createIngestKey: (userId: string, id: string) => createIngestKey(deps, userId, id),
 };
 
 describe.each(Object.entries(scopedCalls))('%s', (_name, call) => {

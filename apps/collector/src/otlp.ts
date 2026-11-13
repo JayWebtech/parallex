@@ -84,7 +84,9 @@ export function toNumber(v: Long | undefined): number {
 }
 
 /** Flattens KeyValue[] into a plain map of primitive values. */
-export function attributeMap(kvs: KeyValue[] | undefined): Record<string, string | number | boolean> {
+export function attributeMap(
+  kvs: KeyValue[] | undefined,
+): Record<string, string | number | boolean> {
   const out: Record<string, string | number | boolean> = {};
   for (const { key, value } of kvs ?? []) {
     if (!value) continue;

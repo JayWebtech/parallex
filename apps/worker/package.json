@@ -13,9 +13,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@parallax/db": "workspace:*"
-  },
-  "devDependencies": {
-    "@parallax/shared": "workspace:*"
+    "@parallax/db": "workspace:*",
+    "@parallax/shared": "workspace:*",
+    "@parallax/umami": "workspace:*"
   }
 }

@@ -38,7 +38,13 @@ afterAll(async () => {
 beforeEach(() => db.pool.query('TRUNCATE api_metrics.request_minute'));
 
 async function totals(source: string) {
-  const { rows } = await db.pool.query<{ service_name: string; method: string; route: string; status_code: number; n: string }>(
+  const { rows } = await db.pool.query<{
+    service_name: string;
+    method: string;
+    route: string;
+    status_code: number;
+    n: string;
+  }>(
     `SELECT service_name, method, route, status_code, sum(count) AS n
        FROM api_metrics.request_minute WHERE source = $1
       GROUP BY 1, 2, 3, 4 ORDER BY 3, 4`,
@@ -90,7 +96,11 @@ describe('OpenTelemetry JS SDK → collector', () => {
       new JsonMetricExporter({ url: `${base}/v1/metrics`, headers: headers() }),
       'cumulative-api',
     );
-    const attrs = { 'http.request.method': 'POST', 'http.route': '/tx', 'http.response.status_code': 201 };
+    const attrs = {
+      'http.request.method': 'POST',
+      'http.route': '/tx',
+      'http.response.status_code': 201,
+    };
     histogram.record(0.1, attrs);
     histogram.record(0.2, attrs);
     await provider.forceFlush(); // exports cumulative 2
@@ -118,7 +128,8 @@ describe('OpenTelemetry JS SDK → collector', () => {
           kind: SpanKind.SERVER,
           attributes: {
             'http.request.method': 'GET',
-            'url.path': '/transactions/262f23e745d9aee3529a559fa26130f1d892dbdf83d642cccc5aaed824a00505',
+            'url.path':
+              '/transactions/262f23e745d9aee3529a559fa26130f1d892dbdf83d642cccc5aaed824a00505',
             'http.response.status_code': status,
           },
         })

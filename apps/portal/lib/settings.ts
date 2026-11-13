@@ -16,6 +16,7 @@ export async function setEnrollmentMode(
   mode: EnrollmentMode,
   actorEmail: string,
 ): Promise<void> {
+  // Callers check write access (withOperator({ write: true }) or assertWritable).
   await deps.db.transaction(async (tx) => {
     await tx
       .insert(setting)

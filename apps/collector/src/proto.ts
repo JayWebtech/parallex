@@ -20,10 +20,16 @@ root.loadSync(
 root.resolveAll();
 
 export const types = {
-  metricsRequest: root.lookupType('opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest'),
-  metricsResponse: root.lookupType('opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceResponse'),
+  metricsRequest: root.lookupType(
+    'opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest',
+  ),
+  metricsResponse: root.lookupType(
+    'opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceResponse',
+  ),
   traceRequest: root.lookupType('opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest'),
-  traceResponse: root.lookupType('opentelemetry.proto.collector.trace.v1.ExportTraceServiceResponse'),
+  traceResponse: root.lookupType(
+    'opentelemetry.proto.collector.trace.v1.ExportTraceServiceResponse',
+  ),
   status: root.lookupType('google.rpc.Status'),
 };
 

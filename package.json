@@ -15,13 +15,14 @@
     "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm format:check && turbo run lint typecheck test",
+    "check": "pnpm format:check && pnpm env:check && turbo run lint typecheck test",
     "env:init": "sh scripts/init-env.sh",
     "stack:up": "docker compose up --build -d --wait",
     "stack:down": "docker compose down",
     "stack:logs": "docker compose logs -f",
     "test:e2e": "pnpm --filter @parallax/portal test:e2e",
-    "test:adblock": "pnpm --filter @parallax/tracker test:adblock"
+    "test:adblock": "pnpm --filter @parallax/tracker test:adblock",
+    "env:check": "node scripts/check-env.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -7,14 +7,15 @@ import { enforceRetention, rollupDays, rollupHours, tick } from '../src/jobs.js'
 let db: Awaited<ReturnType<typeof createTestDb>>;
 const P = randomUUID();
 const NOW = Date.UTC(2026, 10, 13, 12, 30);
-const at = (iso: string) => Date.parse(iso);
 
 beforeAll(async () => {
   db = await createTestDb();
 });
 afterAll(() => db.drop());
 beforeEach(() =>
-  db.pool.query('TRUNCATE api_metrics.request_minute, api_metrics.request_hour, api_metrics.request_day'),
+  db.pool.query(
+    'TRUNCATE api_metrics.request_minute, api_metrics.request_hour, api_metrics.request_day',
+  ),
 );
 
 const buckets = (i: number, n: number) => {

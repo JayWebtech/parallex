@@ -36,6 +36,8 @@ const unchanged: readonly string[] = [
   '/.well-known/stellar.toml',
   '/graphql',
   '/sep-10/challenge',
+  // Uppercase with separators is readable, not base32.
+  '/flags/ENABLE_NEW_PAYMENT_FLOW_FOR_BETA_USERS',
   // readable slugs: separators break letter/digit adjacency
   '/blog/how-to-build-on-stellar-2024',
   '/release-notes/v2-final-20240101-hotfix',
@@ -101,6 +103,9 @@ const invalidStrKeys: readonly Case[] = [
   [`/accounts/${corrupt(MUXED_A)}`, '/accounts/{token}'],
   [`/contracts/${corrupt(CONTRACT_A)}`, '/contracts/{token}'],
   [`/keys/${corrupt(SECRET_A)}`, '/keys/{token}'],
+  // StrKey-shaped with almost no digits (few letter/digit switches): still a token.
+  [`/accounts/G${'A'.repeat(55)}`, '/accounts/{token}'],
+  [`/accounts/GABCDEFGHIJKLMNOPQRSTUVWXYZ2ABCDEFGHIJKLMNOPQRSTUVWXYZA`, '/accounts/{token}'],
 ];
 
 const ids: readonly Case[] = [

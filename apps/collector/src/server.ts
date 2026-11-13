@@ -39,7 +39,13 @@ const isProtobuf = (req: FastifyRequest) =>
   (req.headers['content-type'] ?? '').split(';')[0]!.trim().toLowerCase() === PROTOBUF;
 
 /** Error body per OTLP/HTTP: a google.rpc.Status in the request's encoding. */
-function fail(req: FastifyRequest, reply: FastifyReply, http: number, code: number, message: string) {
+function fail(
+  req: FastifyRequest,
+  reply: FastifyReply,
+  http: number,
+  code: number,
+  message: string,
+) {
   if (isProtobuf(req)) {
     return reply.code(http).type(PROTOBUF).send(encode(types.status, { code, message }));
   }
@@ -94,7 +100,9 @@ export function buildServer(options: ServerOptions) {
       },
     });
     const gunzip = createGunzip();
-    const out = payload.pipe(counter).pipe(gunzip) as typeof gunzip & { receivedEncodedLength?: number };
+    const out = payload.pipe(counter).pipe(gunzip) as typeof gunzip & {
+      receivedEncodedLength?: number;
+    };
     gunzip.on('end', () => {
       out.receivedEncodedLength = received;
     });
@@ -105,7 +113,13 @@ export function buildServer(options: ServerOptions) {
     if (!req.url.startsWith('/v1/')) return;
     const key = readKey(req);
     if (!key || !isKeyOfKind(key, 'ingest')) {
-      return fail(req, reply, 401, RPC.UNAUTHENTICATED, `missing or malformed ${product.ingestKeyHeader}`);
+      return fail(
+        req,
+        reply,
+        401,
+        RPC.UNAUTHENTICATED,
+        `missing or malformed ${product.ingestKeyHeader}`,
+      );
     }
     const hash = hashKey(key);
     const t = now();
@@ -158,7 +172,10 @@ export function buildServer(options: ServerOptions) {
     let body: unknown;
     try {
       body = isProtobuf(req)
-        ? decode(signal === 'metrics' ? types.metricsRequest : types.traceRequest, req.body as Buffer)
+        ? decode(
+            signal === 'metrics' ? types.metricsRequest : types.traceRequest,
+            req.body as Buffer,
+          )
         : req.body;
       if (typeof body !== 'object' || body === null) throw new Error('not an object');
     } catch {
@@ -233,8 +250,10 @@ export function buildServer(options: ServerOptions) {
   app.setErrorHandler((error: { statusCode?: number; message: string }, req, reply) => {
     const status = error.statusCode ?? 500;
     if (status === 413) return fail(req, reply, 413, RPC.INVALID_ARGUMENT, 'payload too large');
-    if (status === 415) return fail(req, reply, 415, RPC.INVALID_ARGUMENT, 'unsupported content type');
-    if (status >= 400 && status < 500) return fail(req, reply, status, RPC.INVALID_ARGUMENT, 'bad request');
+    if (status === 415)
+      return fail(req, reply, 415, RPC.INVALID_ARGUMENT, 'unsupported content type');
+    if (status >= 400 && status < 500)
+      return fail(req, reply, status, RPC.INVALID_ARGUMENT, 'bad request');
     req.log.error({ err: error }, 'unhandled');
     return fail(req, reply, 500, RPC.UNAVAILABLE, 'internal error');
   });

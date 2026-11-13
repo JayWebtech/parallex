@@ -82,8 +82,10 @@ export class FakeUmami {
     }
 
     if (method === 'POST' && url.pathname === '/api/websites') {
+      if (body.id && this.websites.has(body.id))
+        return json(400, { message: 'ID already in use.' });
       const site: FakeWebsite = {
-        id: randomUUID(),
+        id: body.id ?? randomUUID(),
         name: body.name ?? '',
         domain: body.domain ?? '',
         stats: { pageviews: 0, visitors: 0, visits: 0, bounces: 0, totaltime: 0 },

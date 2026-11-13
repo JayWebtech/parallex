@@ -8,3 +8,4 @@
 .env
 .env.*
 infra/geo/data
+examples/nextjs-site/out

@@ -1,4 +1,5 @@
 export { UmamiClient, UmamiError } from './client.js';
+export { waitForUmami } from './bootstrap.js';
 export type {
   MetricType,
   TimeRange,

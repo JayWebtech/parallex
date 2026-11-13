@@ -1,10 +1,11 @@
-import { auditLog, project } from '@parallax/db';
+import { project } from '@parallax/db';
 import type { Project } from '@parallax/db';
 import { buildSnippet } from '@parallax/tracker';
 import { and, count, desc, eq, ne } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Deps } from './deps';
 import { NotFoundError, ValidationError } from './errors';
+import { audit } from './operator';
 import { getEnrollmentMode } from './settings';
 import { checkStellarIdExists, describeMissing, parseStellarId } from './stellar';
 
@@ -158,40 +159,37 @@ export async function getSnippet(
     : null;
 }
 
-/** Operator action: activates a pending project and creates its Umami website. */
-export async function approveProject(deps: Deps, actorEmail: string, id: string): Promise<Project> {
-  if (!projectId.safeParse(id).success) throw new NotFoundError();
-  const [pending] = await deps.db
-    .select()
-    .from(project)
-    .where(and(eq(project.id, id), eq(project.status, 'pending')));
-  if (!pending) throw new NotFoundError();
-
-  const website = await deps.umami.createWebsite({
-    name: pending.name,
-    domain: pending.domains[0] ?? 'unknown',
-  });
-  return deps.db.transaction(async (tx) => {
-    const [row] = await tx
+/**
+ * "Delete all my project's data": the owner removes the project, which hides
+ * it at once and stops its ingest keys; the worker then permanently deletes
+ * its Umami website (every event and session) and all API rollups within a
+ * minute, with no grace period and no restore. The owner confirms by typing
+ * the project's name.
+ */
+export async function deleteProjectByOwner(
+  deps: Pick<Deps, 'db'>,
+  owner: { id: string; email: string },
+  id: string,
+  input: unknown,
+): Promise<void> {
+  const p = await getProject(deps, owner.id, id);
+  const confirm = (input as { confirm?: unknown } | null)?.confirm;
+  if (typeof confirm !== 'string' || confirm.trim() !== p.name)
+    throw new ValidationError({ confirm: 'Type the project name exactly to confirm.' });
+  await deps.db.transaction(async (tx) => {
+    const now = new Date();
+    await tx
       .update(project)
-      .set({ status: 'active', umamiWebsiteId: website.id, updatedAt: new Date() })
-      .where(eq(project.id, id))
-      .returning();
-    await tx.insert(auditLog).values({
-      actorEmail,
-      action: 'project.approve',
-      targetType: 'project',
-      targetId: id,
-    });
-    return row!;
+      .set({ status: 'removed', removedAt: now, removedBy: 'owner', updatedAt: now })
+      .where(and(eq(project.id, p.id), eq(project.ownerId, owner.id)));
+    await audit(
+      tx,
+      owner.email,
+      'project.delete_by_owner',
+      { type: 'project', id: p.id },
+      {
+        name: p.name,
+      },
+    );
   });
-}
-
-/** Operator view of projects waiting for approval. */
-export async function listPendingProjects(deps: Pick<Deps, 'db'>): Promise<Project[]> {
-  return deps.db
-    .select()
-    .from(project)
-    .where(eq(project.status, 'pending'))
-    .orderBy(project.createdAt);
 }

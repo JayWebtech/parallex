@@ -16,6 +16,8 @@ services:
       UMAMI_DB_PASSWORD: ${UMAMI_DB_PASSWORD:?}
       PARALLAX_OWNER_PASSWORD: ${PARALLAX_OWNER_PASSWORD:?}
       PARALLAX_APP_PASSWORD: ${PARALLAX_APP_PASSWORD:?}
+      PARALLAX_COLLECTOR_PASSWORD: ${PARALLAX_COLLECTOR_PASSWORD:?}
+      PARALLAX_WORKER_PASSWORD: ${PARALLAX_WORKER_PASSWORD:?}
     volumes:
       - pgdata:/var/lib/postgresql
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
@@ -74,7 +76,7 @@ services:
   setup:
     build:
       context: ..
-      dockerfile: apps/portal/Dockerfile
+      dockerfile: Dockerfile
       target: builder
     command: [sh, -c, 'node packages/db/dist/migrate.js && node packages/umami/dist/bootstrap.js']
     depends_on:
@@ -91,8 +93,8 @@ services:
   portal:
     build:
       context: ..
-      dockerfile: apps/portal/Dockerfile
-      target: runner
+      dockerfile: Dockerfile
+      target: portal
     restart: unless-stopped
     depends_on:
       setup:
@@ -104,22 +106,141 @@ services:
       UMAMI_URL: http://umami:3000
       UMAMI_ADMIN_PASSWORD: ${UMAMI_ADMIN_PASSWORD}
       OPERATOR_EMAILS: ${OPERATOR_EMAILS:-}
+      DEMO_OPERATOR_EMAILS: ${DEMO_OPERATOR_EMAILS:-}
+      PURGE_AFTER_HOURS: ${PURGE_AFTER_HOURS:-24}
       STELLAR_RPC_MAINNET_URL: ${STELLAR_RPC_MAINNET_URL:-}
       MAX_PROJECTS_PER_USER: ${MAX_PROJECTS_PER_USER:-10}
       SIGNUP_RATE_LIMIT: ${SIGNUP_RATE_LIMIT:-5}
+      DATA_REGION: ${DATA_REGION:-}
     healthcheck:
       test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:3000/api/health || exit 1']
       interval: 10s
       timeout: 3s
       retries: 10
 
+  # OTLP/HTTP receiver: keeps aggregates only (see apps/collector).
+  collector:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: collector
+    restart: unless-stopped
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://parallax_collector:${PARALLAX_COLLECTOR_PASSWORD}@postgres:5432/parallax
+      RATE_LIMIT_PER_SECOND: ${COLLECTOR_RATE_LIMIT_PER_SECOND:-20}
+      RATE_LIMIT_BURST: ${COLLECTOR_RATE_LIMIT_BURST:-200}
+      MAX_ROUTES_PER_PROJECT: ${MAX_ROUTES_PER_PROJECT:-1000}
+    healthcheck:
+      test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:4318/healthz || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # Hourly/daily rollups and retention (single active replica via advisory lock).
+  worker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: worker
+    restart: unless-stopped
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://parallax_worker:${PARALLAX_WORKER_PASSWORD}@postgres:5432/parallax
+      # Purging a removed project deletes its Umami website.
+      UMAMI_URL: http://umami:3000
+      UMAMI_ADMIN_PASSWORD: ${UMAMI_ADMIN_PASSWORD}
+      PURGE_AFTER_HOURS: ${PURGE_AFTER_HOURS:-24}
+
+  # Caddy (pinned in the Dockerfile's CADDY_IMAGE) with the example sites baked in.
+  # ── Public demo (profile "demo"; on via COMPOSE_PROFILES=demo in .env) ──────
+  # A fictional demo tenant fed by the apps in examples/. Shown read-only at /demo.
+
+  # One-shot: demo owner, demo projects (is_demo) with fixed Umami websites, ingest key.
+  demo-seed:
+    profiles: [demo]
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: builder
+    command: [node, apps/worker/dist/seed-demo.js]
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    environment:
+      MIGRATION_DATABASE_URL: postgresql://parallax_owner:${PARALLAX_OWNER_PASSWORD}@postgres:5432/parallax
+      UMAMI_URL: http://umami:3000
+      UMAMI_ADMIN_PASSWORD: ${UMAMI_ADMIN_PASSWORD}
+      DEMO_INGEST_KEY: ${DEMO_INGEST_KEY:-}
+      PUBLIC_URL: ${PUBLIC_URL}
+    restart: 'no'
+
+  # examples/express-api, exporting its HTTP metrics to the collector with the demo key.
+  demo-api:
+    profiles: [demo]
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: demo
+    working_dir: /app/express-api
+    command: [node, --import, ./src/telemetry.js, src/server.js]
+    restart: unless-stopped
+    depends_on:
+      collector:
+        condition: service_healthy
+      demo-seed:
+        condition: service_completed_successfully
+    environment:
+      PORT: '4000'
+      PARALLAX_ENDPOINT: http://collector:4318
+      PARALLAX_INGEST_KEY: ${DEMO_INGEST_KEY}
+      OTEL_SERVICE_NAME: demo-wallet-api
+    healthcheck:
+      test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:4000/health || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # examples/load-generator, running forever: API requests against demo-api and
+  # synthetic visits to the two example sites (see its README).
+  demo-traffic:
+    profiles: [demo]
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: demo
+    working_dir: /app/load-generator
+    command: [node, src/index.js]
+    restart: unless-stopped
+    depends_on:
+      demo-api:
+        condition: service_healthy
+      umami:
+        condition: service_healthy
+    environment:
+      DURATION_S: '0'
+      TARGET_URL: http://demo-api:4000
+      RPS: ${DEMO_API_RPS:-2}
+      WEB_COLLECT_URL: http://umami:3000/p/e
+      WEB_VISITS_PER_HOUR: ${DEMO_VISITS_PER_HOUR:-120}
+      PUBLIC_URL: ${PUBLIC_URL}
+
   caddy:
-    image: caddy:2.11.9-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: edge
     restart: unless-stopped
     depends_on:
       portal:
         condition: service_healthy
       umami:
+        condition: service_healthy
+      collector:
         condition: service_healthy
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}

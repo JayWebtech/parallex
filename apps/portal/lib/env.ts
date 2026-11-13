@@ -14,6 +14,10 @@ const schema = z.object({
   UMAMI_ADMIN_PASSWORD: z.string().min(12),
   /** Comma-separated emails with operator access. No self-promotion: only this list. */
   OPERATOR_EMAILS: z.string().default(''),
+  /** Read-only operators who see only demo tenants (the public demo login). */
+  DEMO_OPERATOR_EMAILS: z.string().default(''),
+  /** Hours a removed project stays restorable before the worker purges its data. */
+  PURGE_AFTER_HOURS: z.coerce.number().min(0).default(24),
   STELLAR_HORIZON_MAINNET_URL: z.url().default('https://horizon.stellar.org'),
   STELLAR_HORIZON_TESTNET_URL: z.url().default('https://horizon-testnet.stellar.org'),
   /** SDF runs no public mainnet RPC; without this, mainnet contracts can't be verified. */
@@ -22,6 +26,8 @@ const schema = z.object({
   MAX_PROJECTS_PER_USER: z.coerce.number().int().positive().default(10),
   /** Account sign-ups allowed per client IP per 5 minutes. */
   SIGNUP_RATE_LIMIT: z.coerce.number().int().positive().default(5),
+  /** Where this deployment runs; shown on /privacy (data residency). */
+  DATA_REGION: z.string().default('Not configured (set DATA_REGION)'),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -35,11 +41,18 @@ export function env(): Env {
   return cached;
 }
 
-export function operatorEmails(): Set<string> {
-  return new Set(
-    env()
-      .OPERATOR_EMAILS.split(',')
+const emailSet = (list: string) =>
+  new Set(
+    list
+      .split(',')
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean),
   );
+
+export function operatorEmails(): Set<string> {
+  return emailSet(env().OPERATOR_EMAILS);
+}
+
+export function demoOperatorEmails(): Set<string> {
+  return emailSet(env().DEMO_OPERATOR_EMAILS);
 }

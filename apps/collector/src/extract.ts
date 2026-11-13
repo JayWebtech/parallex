@@ -54,10 +54,19 @@ const DURATION_METRICS: Record<string, number> = {
   'http.server.request.duration': 1000,
   'http.server.duration': 1,
 };
-const UNIT_TO_MS: Record<string, number> = { s: 1000, ms: 1, us: 0.001, 'µs': 0.001, ns: 1e-6 };
+const UNIT_TO_MS: Record<string, number> = { s: 1000, ms: 1, us: 0.001, µs: 0.001, ns: 1e-6 };
 
 const KNOWN_METHODS = new Set([
-  'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH', 'QUERY',
+  'GET',
+  'HEAD',
+  'POST',
+  'PUT',
+  'DELETE',
+  'CONNECT',
+  'OPTIONS',
+  'TRACE',
+  'PATCH',
+  'QUERY',
 ]);
 
 function method(attrs: Record<string, unknown>): string {
@@ -95,7 +104,8 @@ export function rebucketExplicit(p: HistogramDataPoint, factor: number): number[
   if (counts.length !== bounds.length + 1) return null;
   const out = emptyBuckets();
   counts.forEach((c, i) => {
-    const target = i < bounds.length ? bucketIndex(roundMs(bounds[i]! * factor)) : LATENCY_BOUNDS_MS.length;
+    const target =
+      i < bounds.length ? bucketIndex(roundMs(bounds[i]! * factor)) : LATENCY_BOUNDS_MS.length;
     out[target]! += c;
   });
   return out;
@@ -162,14 +172,18 @@ function collectMetric(
   if (defaultFactor === undefined) return; // not an HTTP server duration: ignored by design
   const factor = UNIT_TO_MS[metric.unit ?? ''] ?? defaultFactor;
 
-  const points: { p: HistogramDataPoint | ExponentialHistogramDataPoint; buckets: number[] | null }[] = [];
-  let temporality = 0;
+  const points: {
+    p: HistogramDataPoint | ExponentialHistogramDataPoint;
+    buckets: number[] | null;
+  }[] = [];
+  let temporality: number;
   if (metric.histogram) {
     temporality = enumValue(metric.histogram.aggregationTemporality, {
       AGGREGATION_TEMPORALITY_DELTA: 1,
       AGGREGATION_TEMPORALITY_CUMULATIVE: 2,
     });
-    for (const p of metric.histogram.dataPoints ?? []) points.push({ p, buckets: rebucketExplicit(p, factor) });
+    for (const p of metric.histogram.dataPoints ?? [])
+      points.push({ p, buckets: rebucketExplicit(p, factor) });
   } else if (metric.exponentialHistogram) {
     temporality = enumValue(metric.exponentialHistogram.aggregationTemporality, {
       AGGREGATION_TEMPORALITY_DELTA: 1,
@@ -221,7 +235,9 @@ export function extractTraces(req: TraceRequest, ctx: ExtractContext): ExtractRe
         if (enumValue(span.kind, { SPAN_KIND_SERVER }) !== SPAN_KIND_SERVER) continue;
         const endMs = nsToMs(span.endTimeUnixNano);
         const durationMs =
-          Number(BigInt(String(span.endTimeUnixNano ?? 0)) - BigInt(String(span.startTimeUnixNano ?? 0))) / 1e6;
+          Number(
+            BigInt(String(span.endTimeUnixNano ?? 0)) - BigInt(String(span.startTimeUnixNano ?? 0)),
+          ) / 1e6;
         if (!inWindow(ctx, endMs) || !(durationMs >= 0)) {
           result.rejected++;
           continue;

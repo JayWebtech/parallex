@@ -28,6 +28,26 @@
 		reverse_proxy umami:3000
 	}
 
+	# OpenTelemetry (OTLP/HTTP) ingestion. The collector caps the decompressed
+	# body and authenticates every request with the tenant's ingest key.
+	@otlp path /v1/metrics /v1/traces /v1/logs
+	handle @otlp {
+		request_body {
+			max_size 5MB
+		}
+		reverse_proxy collector:4318
+	}
+
+	# Example sites of the public demo: static files baked into the edge image.
+	# They embed the tracker same-origin, so opening one counts a demo visit.
+	redir /examples/static-site /examples/static-site/
+	redir /examples/nextjs-site /examples/nextjs-site/
+	handle /examples/* {
+		header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'"
+		root * /srv
+		file_server
+	}
+
 	# Everything else (portal UI, auth, tracker scripts under /p/v*/) goes to the portal.
 	handle {
 		reverse_proxy portal:3000

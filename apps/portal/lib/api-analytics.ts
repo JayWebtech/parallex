@@ -40,6 +40,7 @@ export interface ApiAnalytics {
 }
 
 const HOUR = 3_600_000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface Table {
   name: SQL;
@@ -64,25 +65,34 @@ function pickTable(range: Pick<Range, 'startAt' | 'endAt'>, nowMs: number): Tabl
 }
 
 /**
- * Rows for one project and range, keeping one source per service: metrics
- * when the service sent any, otherwise SERVER-span counts. Prevents double
- * counting when a tenant exports both signals.
+ * Rows for the given projects and range, keeping one source per (project,
+ * service): metrics when the service sent any, otherwise SERVER-span counts.
+ * Prevents double counting when a tenant exports both signals.
  */
-function scopedRows(table: Table, projectId: string, startAt: number, endAt: number): SQL {
+function scopedRows(
+  table: Table,
+  projectIds: string | string[],
+  startAt: number,
+  endAt: number,
+): SQL {
+  const ids = (Array.isArray(projectIds) ? projectIds : [projectIds]).filter((id) => UUID.test(id));
+  // One bound parameter holding a Postgres array literal (drizzle would expand a JS array).
+  const idArray = `{${ids.join(',')}}`;
   return sql`
     scoped AS (
       SELECT * FROM ${table.name}
-       WHERE project_id = ${projectId}
+       WHERE project_id = ANY(${idArray}::uuid[])
          AND ${table.time} >= to_timestamp(${startAt}::float8 / 1000)
          AND ${table.time} <= to_timestamp(${endAt}::float8 / 1000)
     ),
     pref AS (
-      SELECT service_name,
+      SELECT project_id, service_name,
              CASE WHEN bool_or(source = 'metrics') THEN 'metrics' ELSE 'traces' END AS src
-        FROM scoped GROUP BY service_name
+        FROM scoped GROUP BY project_id, service_name
     ),
     r AS (
-      SELECT s.* FROM scoped s JOIN pref p ON p.service_name = s.service_name AND p.src = s.source
+      SELECT s.* FROM scoped s
+        JOIN pref p ON p.project_id = s.project_id AND p.service_name = s.service_name AND p.src = s.source
     )`;
 }
 
@@ -100,7 +110,13 @@ function totalsFrom(row: Record<string, unknown> | undefined): ApiTotals {
   };
 }
 
-async function totals(deps: Pick<Deps, 'db'>, table: Table, projectId: string, start: number, end: number) {
+async function totals(
+  deps: Pick<Deps, 'db'>,
+  table: Table,
+  projectId: string,
+  start: number,
+  end: number,
+) {
   const res = await deps.db.execute(sql`
     WITH ${scopedRows(table, projectId, start, end)}
     SELECT sum(count) AS requests,
@@ -169,7 +185,12 @@ export async function readApi(
 
   const routeRows: ApiRoute[] = routes.rows.map((r) => {
     const requests = Number(r.requests);
-    const s = { s2xx: Number(r.s2xx ?? 0), s3xx: Number(r.s3xx ?? 0), s4xx: Number(r.s4xx ?? 0), s5xx: Number(r.s5xx ?? 0) };
+    const s = {
+      s2xx: Number(r.s2xx ?? 0),
+      s3xx: Number(r.s3xx ?? 0),
+      s4xx: Number(r.s4xx ?? 0),
+      s5xx: Number(r.s5xx ?? 0),
+    };
     const buckets = toBuckets(r.buckets);
     return {
       service: String(r.service_name),
@@ -183,7 +204,11 @@ export async function readApi(
   });
 
   const filled = fillSeries(
-    series.rows.map((r) => ({ x: String(r.x), requests: Number(r.requests), errors: Number(r.errors ?? 0) })),
+    series.rows.map((r) => ({
+      x: String(r.x),
+      requests: Number(r.requests),
+      errors: Number(r.errors ?? 0),
+    })),
     { startAt: range.startAt, endAt: range.endAt, unit: range.unit },
     { requests: 0, errors: 0 },
   ).map(({ t, requests, errors }) => ({ x: new Date(t).toISOString(), requests, errors }));
@@ -206,4 +231,59 @@ export async function readApi(
       lastUsedAt: lastUsed ? new Date(String(lastUsed)).toISOString() : null,
     },
   };
+}
+
+// ── Multi-project reads (operator views). Callers enforce operator scope. ──
+
+/** API totals for many projects in one query. Projects without data are absent. */
+export async function apiTotalsByProject(
+  deps: Pick<Deps, 'db'>,
+  projectIds: string[],
+  range: Pick<Range, 'startAt' | 'endAt'>,
+  nowMs = Date.now(),
+): Promise<Map<string, ApiTotals>> {
+  if (projectIds.length === 0) return new Map();
+  const table = pickTable(range, nowMs);
+  const res = await deps.db.execute(sql`
+    WITH ${scopedRows(table, projectIds, range.startAt, range.endAt)}
+    SELECT project_id,
+           sum(count) AS requests,
+           sum(count) FILTER (WHERE status_code BETWEEN 400 AND 499) AS s4xx,
+           sum(count) FILTER (WHERE status_code BETWEEN 500 AND 599) AS s5xx,
+           api_metrics.bucket_sum(duration_buckets) AS buckets
+      FROM r GROUP BY project_id`);
+  return new Map(res.rows.map((row) => [String(row.project_id), totalsFrom(row)]));
+}
+
+/** Requests per time bucket for each project (zero-filled). */
+export async function apiSeriesByProject(
+  deps: Pick<Deps, 'db'>,
+  projectIds: string[],
+  range: Range,
+  nowMs = Date.now(),
+): Promise<Map<string, { x: string; requests: number }[]>> {
+  const table = pickTable(range, nowMs);
+  const unit = range.unit === 'hour' ? sql`'hour'` : sql`'day'`;
+  const res = projectIds.length
+    ? await deps.db.execute(sql`
+        WITH ${scopedRows(table, projectIds, range.startAt, range.endAt)}
+        SELECT project_id,
+               to_char(date_trunc(${unit}, ${table.time} AT TIME ZONE 'UTC'), 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS x,
+               sum(count) AS requests
+          FROM r GROUP BY 1, 2 ORDER BY 2`)
+    : { rows: [] };
+  const out = new Map<string, { x: string; requests: number }[]>();
+  for (const id of projectIds) {
+    const points = res.rows
+      .filter((r) => String(r.project_id) === id)
+      .map((r) => ({ x: String(r.x), requests: Number(r.requests) }));
+    out.set(
+      id,
+      fillSeries(points, range, { requests: 0 }).map(({ t, requests }) => ({
+        x: new Date(t).toISOString(),
+        requests,
+      })),
+    );
+  }
+  return out;
 }

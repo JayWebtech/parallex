@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     include: ['test/e2e/**/*.e2e.test.ts'],
     testTimeout: 30_000,
+    // Suites share one stack (e.g. the enrollment mode switch): run files one at a time.
+    fileParallelism: false,
     hookTimeout: 60_000,
   },
 });

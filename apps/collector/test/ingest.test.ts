@@ -62,12 +62,20 @@ function metricsFixture() {
     timeMs: NOW,
     points: [
       {
-        attrs: [kv('http.request.method', 'GET'), kv('http.route', '/accounts/:id'), kv('http.response.status_code', 200)],
+        attrs: [
+          kv('http.request.method', 'GET'),
+          kv('http.route', '/accounts/:id'),
+          kv('http.response.status_code', 200),
+        ],
         counts: countsAt(3, 4), // 4 requests in (25, 50] ms
         sum: 0.16,
       },
       {
-        attrs: [kv('http.request.method', 'post'), kv('http.route', '/tx'), kv('http.response.status_code', 503)],
+        attrs: [
+          kv('http.request.method', 'post'),
+          kv('http.route', '/tx'),
+          kv('http.response.status_code', 503),
+        ],
         counts: countsAt(14, 1), // 1 request above 10 s
         sum: 12,
       },
@@ -102,7 +110,12 @@ const expectedMetricRows = [
 
 describe('POST /v1/metrics', () => {
   it('stores exact minute rows from an OTLP/JSON histogram', async () => {
-    const res = await app.inject({ method: 'POST', url: '/v1/metrics', headers: auth(), payload: metricsFixture() });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/metrics',
+      headers: auth(),
+      payload: metricsFixture(),
+    });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({});
     expect(await rows()).toEqual(expectedMetricRows);
@@ -133,10 +146,19 @@ describe('POST /v1/metrics', () => {
 
   it('adds up repeated deliveries for the same minute', async () => {
     for (let i = 0; i < 2; i++) {
-      await app.inject({ method: 'POST', url: '/v1/metrics', headers: auth(), payload: metricsFixture() });
+      await app.inject({
+        method: 'POST',
+        url: '/v1/metrics',
+        headers: auth(),
+        payload: metricsFixture(),
+      });
     }
     const [first] = await rows();
-    expect(first).toMatchObject({ count: 8, duration_sum_ms: 320, duration_buckets: bucketsWith(3, 8) });
+    expect(first).toMatchObject({
+      count: 8,
+      duration_sum_ms: 320,
+      duration_buckets: bucketsWith(3, 8),
+    });
   });
 
   it('turns cumulative streams into deltas', async () => {
@@ -174,7 +196,10 @@ describe('POST /v1/metrics', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({
-      partialSuccess: { rejectedDataPoints: 1, errorMessage: expect.stringContaining('time window') },
+      partialSuccess: {
+        rejectedDataPoints: 1,
+        errorMessage: expect.stringContaining('time window'),
+      },
     });
     expect(await rows()).toEqual([]);
   });
@@ -187,13 +212,22 @@ describe('POST /v1/metrics', () => {
       payload: durationMetric({
         timeMs: NOW,
         points: [
-          { attrs: [kv('url.path', `/accounts/${ACCOUNT}/payments`)], counts: countsAt(0, 1), sum: 0 },
+          {
+            attrs: [kv('url.path', `/accounts/${ACCOUNT}/payments`)],
+            counts: countsAt(0, 1),
+            sum: 0,
+          },
           { attrs: [kv('url.path', `/sign/${SECRET}`)], counts: countsAt(0, 1), sum: 0 },
         ],
       }),
     });
-    expect((await rows()).map((r) => r.route)).toEqual(['/accounts/{account}/payments', '/sign/{REDACTED_SECRET}']);
-    const { rows: w } = await db.pool.query('SELECT secrets_redacted FROM api_metrics.ingest_warning_day');
+    expect((await rows()).map((r) => r.route)).toEqual([
+      '/accounts/{account}/payments',
+      '/sign/{REDACTED_SECRET}',
+    ]);
+    const { rows: w } = await db.pool.query(
+      'SELECT secrets_redacted FROM api_metrics.ingest_warning_day',
+    );
     expect(w).toEqual([{ secrets_redacted: '1' }]);
   });
 
@@ -265,9 +299,30 @@ describe('POST /v1/traces', () => {
             scopeSpans: [
               {
                 spans: [
-                  span(2, [kv('http.request.method', 'GET'), kv('url.path', `/accounts/${ACCOUNT}`), kv('http.response.status_code', 200), kv('user.email', 'EMAIL-MARKER@example.org')], 40),
-                  span(2, [kv('http.request.method', 'GET'), kv('url.path', `/accounts/${ACCOUNT}`), kv('http.response.status_code', 200)], 60),
-                  span(3, [kv('http.request.method', 'GET'), kv('url.full', 'https://horizon/x')], 10), // CLIENT: ignored
+                  span(
+                    2,
+                    [
+                      kv('http.request.method', 'GET'),
+                      kv('url.path', `/accounts/${ACCOUNT}`),
+                      kv('http.response.status_code', 200),
+                      kv('user.email', 'EMAIL-MARKER@example.org'),
+                    ],
+                    40,
+                  ),
+                  span(
+                    2,
+                    [
+                      kv('http.request.method', 'GET'),
+                      kv('url.path', `/accounts/${ACCOUNT}`),
+                      kv('http.response.status_code', 200),
+                    ],
+                    60,
+                  ),
+                  span(
+                    3,
+                    [kv('http.request.method', 'GET'), kv('url.full', 'https://horizon/x')],
+                    10,
+                  ), // CLIENT: ignored
                   span(1, [], 5), // INTERNAL: ignored
                 ],
               },
@@ -302,7 +357,13 @@ describe('POST /v1/traces', () => {
       resourceSpans: [
         {
           resource: { attributes: [kv('service.name', 'api')] },
-          scopeSpans: [{ spans: [{ ...span(2, [kv('http.route', '/p')], 7), traceId: undefined, spanId: undefined }] }],
+          scopeSpans: [
+            {
+              spans: [
+                { ...span(2, [kv('http.route', '/p')], 7), traceId: undefined, spanId: undefined },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -323,7 +384,9 @@ describe('POST /v1/logs', () => {
       method: 'POST',
       url: '/v1/logs',
       headers: auth(),
-      payload: { resourceLogs: [{ scopeLogs: [{ logRecords: [{ body: { stringValue: 'LOG-MARKER' } }] }] }] },
+      payload: {
+        resourceLogs: [{ scopeLogs: [{ logRecords: [{ body: { stringValue: 'LOG-MARKER' } }] }] }],
+      },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({});
@@ -332,7 +395,16 @@ describe('POST /v1/logs', () => {
 
 describe('nothing but aggregates reaches the database', () => {
   it('no marker from spans, events, logs or extra attributes is stored anywhere', async () => {
-    const markers = ['SPAN-NAME-MARKER', 'EVENT-MARKER', 'HOST-MARKER', 'EMAIL-MARKER', 'LOG-MARKER', SECRET, OTHER_ACCOUNT, 'AAECAwQF'];
+    const markers = [
+      'SPAN-NAME-MARKER',
+      'EVENT-MARKER',
+      'HOST-MARKER',
+      'EMAIL-MARKER',
+      'LOG-MARKER',
+      SECRET,
+      OTHER_ACCOUNT,
+      'AAECAwQF',
+    ];
     await app.inject({
       method: 'POST',
       url: '/v1/traces',
@@ -350,7 +422,10 @@ describe('nothing but aggregates reaches the database', () => {
                     kind: 2,
                     startTimeUnixNano: ns(NOW - 5),
                     endTimeUnixNano: ns(NOW),
-                    attributes: [kv('url.path', `/sign/${SECRET}/${OTHER_ACCOUNT}`), kv('user.email', 'EMAIL-MARKER')],
+                    attributes: [
+                      kv('url.path', `/sign/${SECRET}/${OTHER_ACCOUNT}`),
+                      kv('user.email', 'EMAIL-MARKER'),
+                    ],
                     events: [{ name: 'EVENT-MARKER' }],
                   },
                 ],
@@ -364,7 +439,9 @@ describe('nothing but aggregates reaches the database', () => {
       method: 'POST',
       url: '/v1/logs',
       headers: auth(),
-      payload: { resourceLogs: [{ scopeLogs: [{ logRecords: [{ body: { stringValue: 'LOG-MARKER' } }] }] }] },
+      payload: {
+        resourceLogs: [{ scopeLogs: [{ logRecords: [{ body: { stringValue: 'LOG-MARKER' } }] }] }],
+      },
     });
     const { rows: tables } = await db.pool.query<{ s: string; t: string }>(
       `SELECT table_schema AS s, table_name AS t FROM information_schema.tables
@@ -383,7 +460,11 @@ describe('nothing but aggregates reaches the database', () => {
 
 describe('authentication and limits', () => {
   it('rejects missing, malformed and unknown keys with 401', async () => {
-    for (const headers of [{}, { [product.ingestKeyHeader]: 'nope' }, { [product.ingestKeyHeader]: `${product.keyPrefixes.ingest}${'A'.repeat(43)}` }]) {
+    for (const headers of [
+      {},
+      { [product.ingestKeyHeader]: 'nope' },
+      { [product.ingestKeyHeader]: `${product.keyPrefixes.ingest}${'A'.repeat(43)}` },
+    ]) {
       const res = await app.inject({ method: 'POST', url: '/v1/metrics', headers, payload: {} });
       expect(res.statusCode).toBe(401);
       expect(res.json()).toMatchObject({ code: 16 });
@@ -403,15 +484,24 @@ describe('authentication and limits', () => {
   it('stops accepting a key once revoked (cache TTL 0 here)', async () => {
     const other = await seedTenant(db.db, 'revoked');
     const send = () =>
-      app.inject({ method: 'POST', url: '/v1/logs', headers: { [product.ingestKeyHeader]: other.key }, payload: {} });
+      app.inject({
+        method: 'POST',
+        url: '/v1/logs',
+        headers: { [product.ingestKeyHeader]: other.key },
+        payload: {},
+      });
     expect((await send()).statusCode).toBe(200);
-    await db.pool.query('UPDATE api_metrics.ingest_key SET revoked_at = now() WHERE id = $1', [other.keyId]);
+    await db.pool.query('UPDATE api_metrics.ingest_key SET revoked_at = now() WHERE id = $1', [
+      other.keyId,
+    ]);
     expect((await send()).statusCode).toBe(401);
   });
 
   it('stops accepting keys of removed projects', async () => {
     const other = await seedTenant(db.db, 'removed');
-    await db.pool.query(`UPDATE portal.project SET status = 'removed' WHERE id = $1`, [other.projectId]);
+    await db.pool.query(`UPDATE portal.project SET status = 'removed' WHERE id = $1`, [
+      other.projectId,
+    ]);
     const res = await app.inject({
       method: 'POST',
       url: '/v1/logs',
@@ -427,7 +517,8 @@ describe('authentication and limits', () => {
       now: () => clock,
       config: { rateLimit: { perSecond: 1, burst: 2 } },
     });
-    const send = () => limited.inject({ method: 'POST', url: '/v1/logs', headers: auth(), payload: {} });
+    const send = () =>
+      limited.inject({ method: 'POST', url: '/v1/logs', headers: auth(), payload: {} });
     expect((await send()).statusCode).toBe(200);
     expect((await send()).statusCode).toBe(200);
     const third = await send();
@@ -444,7 +535,12 @@ describe('authentication and limits', () => {
       [{ 'content-type': 'application/x-protobuf' }, big],
       [{ 'content-type': 'application/x-protobuf', 'content-encoding': 'gzip' }, gzipSync(big)],
     ] as const) {
-      const res = await small.inject({ method: 'POST', url: '/v1/metrics', headers: { ...auth(), ...headers }, payload });
+      const res = await small.inject({
+        method: 'POST',
+        url: '/v1/metrics',
+        headers: { ...auth(), ...headers },
+        payload,
+      });
       expect(res.statusCode).toBe(413);
     }
   });

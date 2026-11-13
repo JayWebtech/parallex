@@ -1,0 +1,16 @@
+{
+  "name": "@parallax/example-load-generator",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Drives the demo's example apps: realistic requests to examples/express-api and synthetic visitors to the example sites.",
+  "scripts": {
+    "start": "node src/index.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@parallax/shared": "workspace:*",
+    "@stellar/stellar-sdk": "17.4.0"
+  }
+}

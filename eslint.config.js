@@ -9,6 +9,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/coverage/**',
       '**/.next/**',
+      'examples/nextjs-site/out/**',
       '**/node_modules/**',
       '**/.turbo/**',
       '**/.cache/**',
@@ -24,7 +25,10 @@ export default tseslint.config(
     },
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
       // Used deliberately where a value is known to exist (e.g. insert … returning()).
       '@typescript-eslint/no-non-null-assertion': 'off',
     },

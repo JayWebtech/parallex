@@ -62,6 +62,7 @@ The first match wins.
 | Digits only                                                                                                      | `{id}`                |
 | ISO date `YYYY-MM-DD`, optionally with time and offset                                                           | `{date}`              |
 | Opaque token: 20+ chars of `[A-Za-z0-9._~+=-]` that look random (see below)                                      | `{token}`             |
+| 40+ characters of `[A-Z2-7]` only (StrKey-shaped with a bad checksum)                                            | `{token}`             |
 | Any segment longer than `maxSegmentLength` (default 128)                                                         | `{token}`             |
 
 Strings that look like StrKeys but fail the checksum are not treated as Stellar IDs. They usually match the token rule instead.

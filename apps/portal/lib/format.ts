@@ -40,3 +40,12 @@ export function formatBucket(iso: string, unit: string): string {
     ? d.toLocaleString('en', { hour: 'numeric', day: 'numeric', month: 'short', timeZone: 'UTC' })
     : d.toLocaleDateString('en', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
+
+/** Latency from merged buckets; the top bucket is open-ended (≥ 10 s). */
+export function formatMs(ms: number | null): string {
+  if (ms === null) return '–';
+  if (ms >= 10_000) return '≥ 10 s';
+  if (ms >= 1000) return `${(ms / 1000).toFixed(1)} s`;
+  if (ms < 1) return '< 1 ms';
+  return `${Math.round(ms)} ms`;
+}

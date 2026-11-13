@@ -81,6 +81,9 @@ function isDate(s: string): boolean {
  * Separators (`-`, `_`, `.`, `~`, `+`, `=`, `/`) break letter/digit adjacency, so
  * `how-to-build-on-stellar-2024` is not a token.
  *
+ * Also a token: 40+ characters of the StrKey/base32 alphabet only (`[A-Z2-7]`),
+ * e.g. a Stellar-key-shaped string with a bad checksum. No readable word is that.
+ *
  * Measured on random base64url strings, this misses ~1.6% of 20-char tokens and
  * ~0.2% of 32-char ones; the per-tenant cardinality guard bounds what slips through.
  */
@@ -95,8 +98,11 @@ function charClass(code: number): CharClass {
   if (code >= 48 && code <= 57) return CharClass.Digit;
   return CharClass.Other;
 }
+const BASE32_RUN = /^[A-Z2-7]{40,}$/;
+
 export function isOpaqueToken(s: string): boolean {
   if (s.length < TOKEN_MIN_LENGTH || !TOKEN_CHARS.test(s)) return false;
+  if (BASE32_RUN.test(s)) return true;
   let upper = 0;
   let lower = 0;
   let lowerRuns = 0;

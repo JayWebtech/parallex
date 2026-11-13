@@ -22,6 +22,7 @@
     "vendor": "node --experimental-strip-types scripts/vendor.ts"
   },
   "devDependencies": {
-    "@ghostery/adblocker": "2.20.3"
+    "@ghostery/adblocker": "2.20.3",
+    "@parallax/shared": "workspace:*"
   }
 }

@@ -32,7 +32,9 @@ export function createPgStore(pool: DbHandle['pool']): Store {
     },
 
     async touchKey(keyId) {
-      await pool.query(`UPDATE api_metrics.ingest_key SET last_used_at = now() WHERE id = $1`, [keyId]);
+      await pool.query(`UPDATE api_metrics.ingest_key SET last_used_at = now() WHERE id = $1`, [
+        keyId,
+      ]);
     },
 
     async knownRoutes(projectId) {

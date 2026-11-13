@@ -13,4 +13,7 @@ export interface Deps {
   publicUrl: string;
   maxProjectsPerUser: number;
   operatorEmails: ReadonlySet<string>;
+  /** Read-only operators limited to demo tenants. */
+  demoOperatorEmails?: ReadonlySet<string>;
+  purgeAfterHours?: number;
 }

@@ -6,12 +6,14 @@
   "type": "module",
   "description": "Express API instrumented with OpenTelemetry, dual-exporting metrics to the tenant's own APM and to Parallax.",
   "scripts": {
-    "start": "node --import ./src/telemetry.js src/server.js"
+    "start": "node --import ./src/telemetry.js src/server.js",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@opentelemetry/api": "1.10.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "0.301.1",
     "@opentelemetry/exporter-trace-otlp-proto": "0.301.1",
+    "@opentelemetry/instrumentation": "0.301.1",
     "@opentelemetry/instrumentation-express": "0.73.0",
     "@opentelemetry/instrumentation-http": "0.301.1",
     "@opentelemetry/resources": "3.1.1",

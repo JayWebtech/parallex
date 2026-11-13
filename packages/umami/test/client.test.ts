@@ -77,4 +77,15 @@ describe('UmamiClient', () => {
       client.getStats('00000000-0000-4000-8000-000000000000', range),
     ).rejects.toMatchObject({ status: 404 });
   });
+  it('creates a website under a fixed ID once (idempotent seeding)', async () => {
+    const { fake, client } = setup();
+    const site = {
+      id: '7da3c9db-8e41-449d-8b9d-ea2680e93701',
+      name: 'Demo',
+      domain: 'demo.example.org',
+    };
+    expect(await client.ensureWebsite(site)).toBe('created');
+    expect(await client.ensureWebsite(site)).toBe('exists');
+    expect([...fake.websites.keys()]).toEqual([site.id]);
+  });
 });

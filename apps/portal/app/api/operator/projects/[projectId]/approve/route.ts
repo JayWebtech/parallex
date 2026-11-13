@@ -1,9 +1,12 @@
-import { approveProject } from '@/lib/projects';
+import { approveProject } from '@/lib/operator-projects';
 import { withOperator } from '@/lib/route';
 import { getDeps } from '@/lib/server';
 import { toProjectView } from '@/lib/views';
 
-export const POST = withOperator<{ projectId: string }>(async ({ user, params }) => {
-  const project = await approveProject(getDeps(), user.email, params.projectId);
-  return Response.json({ project: toProjectView(project) });
-});
+export const POST = withOperator<{ projectId: string }>(
+  async ({ op, params }) => {
+    const project = await approveProject(getDeps(), op, params.projectId);
+    return Response.json({ project: toProjectView(project) });
+  },
+  { write: true },
+);

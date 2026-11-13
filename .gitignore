@@ -10,3 +10,5 @@ coverage/
 .DS_Store
 .cache/
 infra/geo/data/
+next-env.d.ts
+examples/nextjs-site/out/

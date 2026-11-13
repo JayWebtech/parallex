@@ -40,6 +40,10 @@ export const project = portal.table(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     removedAt: timestamp('removed_at', { withTimezone: true }),
+    /** Operator email (or "owner") that removed the project. */
+    removedBy: text('removed_by'),
+    /** Set by the worker once Umami and API data are deleted; the row stays as a tombstone. */
+    purgedAt: timestamp('purged_at', { withTimezone: true }),
   },
   (t) => [index('project_owner_id_idx').on(t.ownerId), index('project_status_idx').on(t.status)],
 );

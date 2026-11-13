@@ -35,7 +35,9 @@ export const kv = (key: string, value: string | number) =>
     : { key, value: { intValue: String(value) } };
 
 /** Default OTel boundaries for http.server.request.duration (seconds). */
-export const SECONDS_BOUNDS = [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10];
+export const SECONDS_BOUNDS = [
+  0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
+];
 
 export function durationMetric(opts: {
   service?: string;

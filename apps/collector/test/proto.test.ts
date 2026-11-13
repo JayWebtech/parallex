@@ -10,7 +10,9 @@ describe('vendored protos', () => {
   it.each(sums.map((line) => line.split(/\s+/) as [string, string]))(
     '%s matches %s',
     (sha, file) => {
-      const actual = createHash('sha256').update(readFileSync(path.join(PROTO_DIR, file))).digest('hex');
+      const actual = createHash('sha256')
+        .update(readFileSync(path.join(PROTO_DIR, file)))
+        .digest('hex');
       expect(actual).toBe(sha);
     },
   );

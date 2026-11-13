@@ -10,3 +10,5 @@ export {
   emptyBuckets,
   quantileMs,
 } from './latency.js';
+export { DEMO_API_PROJECT, DEMO_OWNER, DEMO_PROJECTS } from './demo.js';
+export type { DemoProject } from './demo.js';

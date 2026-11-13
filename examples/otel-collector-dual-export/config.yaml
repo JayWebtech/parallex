@@ -1,0 +1,46 @@
+# OpenTelemetry Collector (contrib): everything to your own APM, and HTTP
+# server duration metrics (only) to Parallax.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+  # Parallax only needs request duration histograms; drop everything else.
+  filter/parallax:
+    error_mode: ignore
+    metrics:
+      metric:
+        - 'name != "http.server.request.duration" and name != "http.server.duration"'
+  # Send deltas, so a restart of this collector never double-counts.
+  cumulativetodelta: {}
+
+exporters:
+  otlphttp/apm:
+    endpoint: ${env:APM_OTLP_ENDPOINT}
+    headers:
+      authorization: ${env:APM_AUTH_HEADER}
+  otlphttp/parallax:
+    endpoint: ${env:PARALLAX_ENDPOINT}
+    headers:
+      x-parallax-key: ${env:PARALLAX_INGEST_KEY}
+    compression: gzip
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/apm]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/apm]
+    metrics/parallax:
+      receivers: [otlp]
+      processors: [filter/parallax, cumulativetodelta, batch]
+      exporters: [otlphttp/parallax]

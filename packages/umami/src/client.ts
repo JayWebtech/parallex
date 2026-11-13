@@ -105,8 +105,29 @@ export class UmamiClient {
     return 'changed';
   }
 
-  async createWebsite(input: { name: string; domain: string }): Promise<UmamiWebsite> {
+  /** `id` is optional; Umami picks a UUID when it is omitted. */
+  async createWebsite(input: { name: string; domain: string; id?: string }): Promise<UmamiWebsite> {
     return website.parse(await this.#request('POST', '/api/websites', input));
+  }
+
+  /** Creates a website with a fixed ID unless it already exists (idempotent seeding). */
+  async ensureWebsite(input: {
+    id: string;
+    name: string;
+    domain: string;
+  }): Promise<'created' | 'exists'> {
+    try {
+      await this.createWebsite(input);
+      return 'created';
+    } catch (error) {
+      if (
+        error instanceof UmamiError &&
+        error.status === 400 &&
+        /already in use/i.test(error.message)
+      )
+        return 'exists';
+      throw error;
+    }
   }
 
   async deleteWebsite(websiteId: string): Promise<void> {

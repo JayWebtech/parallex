@@ -54,7 +54,7 @@ export function buildSnippet(input: {
   return (
     `<script defer src="${origin}${v.scriptPath}" ` +
     `data-website-id="${input.websiteId}" data-host-url="${origin}" ` +
-    `data-do-not-track="true" ` +
+    `data-do-not-track="true" data-exclude-search="true" ` +
     `integrity="${v.sha384}" crossorigin="anonymous"></script>`
   );
 }

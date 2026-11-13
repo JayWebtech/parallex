@@ -1,0 +1,123 @@
+:root {
+  color-scheme: light dark;
+  --fg: #171717;
+  --muted: #6b6b6b;
+  --line: #e5e5e5;
+  --accent: #2a78d6;
+  --bg: #fff;
+  font-family: system-ui, sans-serif;
+  line-height: 1.6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #f5f5f5;
+    --muted: #a3a3a3;
+    --line: #2e2e2e;
+    --accent: #3987e5;
+    --bg: #111;
+  }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+header,
+main,
+footer {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.brand {
+  color: var(--fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+.label,
+.muted {
+  color: var(--muted);
+}
+.balance {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fg);
+  color: var(--bg);
+  font: inherit;
+  text-decoration: none;
+}
+.button.secondary {
+  background: transparent;
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.button:disabled {
+  opacity: 0.5;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.form input {
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.list {
+  padding: 0;
+  list-style: none;
+}
+.list li {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.amount {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+footer {
+  color: var(--muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--line);
+}

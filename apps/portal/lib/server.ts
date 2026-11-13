@@ -2,11 +2,13 @@ import 'server-only';
 import { createDb } from '@parallax/db';
 import { UmamiClient } from '@parallax/umami';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { createAuth } from './auth';
 import type { Auth } from './auth';
 import type { Deps } from './deps';
-import { env, operatorEmails } from './env';
+import { demoOperatorEmails, env, operatorEmails } from './env';
+import type { OperatorContext } from './operator';
+import { operatorForEmail } from './operator';
 
 /**
  * Process-wide singletons, created lazily on first request so `next build`
@@ -40,6 +42,8 @@ export function getDeps(): Deps {
       publicUrl: e.PUBLIC_URL,
       maxProjectsPerUser: e.MAX_PROJECTS_PER_USER,
       operatorEmails: operatorEmails(),
+      demoOperatorEmails: demoOperatorEmails(),
+      purgeAfterHours: e.PURGE_AFTER_HOURS,
     };
   }
   return deps;
@@ -60,13 +64,16 @@ export interface SessionUser {
   email: string;
   name: string;
   isOperator: boolean;
+  /** Set only for emails on the operator allowlists. */
+  operator: OperatorContext | null;
 }
 
 async function toSessionUser(h: Headers): Promise<SessionUser | null> {
   const session = await getAuth().api.getSession({ headers: h });
   if (!session) return null;
   const { id, email, name } = session.user;
-  return { id, email, name, isOperator: getDeps().operatorEmails.has(email.toLowerCase()) };
+  const operator = operatorForEmail(getDeps(), email);
+  return { id, email, name, isOperator: operator !== null, operator };
 }
 
 /** Signed-in user for server components, or null. */
@@ -79,6 +86,13 @@ export async function requireUser(): Promise<SessionUser> {
   const user = await currentUser();
   if (!user) redirect('/sign-in');
   return user;
+}
+
+/** Operator pages: anyone else gets a plain 404, as if the page did not exist. */
+export async function requireOperator(): Promise<SessionUser & { operator: OperatorContext }> {
+  const user = await requireUser();
+  if (!user.operator) notFound();
+  return user as SessionUser & { operator: OperatorContext };
 }
 
 /** Signed-in user for route handlers, or null (respond 401). */

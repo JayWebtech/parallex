@@ -42,7 +42,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod --audit-level high
       - run: pnpm format:check
+      # Every variable the compose stack reads is documented in .env.example.
+      - run: pnpm env:check
       - run: pnpm turbo run build lint typecheck test
+      # ~12 req/s steady (≈1M/day) and an unthrottled burst; fails on p99 > 100 ms or any error.
+      - run: pnpm --filter @parallax/collector bench
 
   adblock:
     name: Tracker vs. ad-blocker filter lists
@@ -58,7 +62,7 @@ jobs:
       - run: pnpm test:adblock
 
   stack:
-    name: Docker stack + end-to-end isolation
+    name: Docker stack (with public demo) + end-to-end tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -70,7 +74,24 @@ jobs:
       - run: pnpm turbo run build --filter=@parallax/tracker
       # The committed tracker must be byte-for-byte derivable from the pinned Umami image.
       - run: pnpm --filter @parallax/tracker vendor --verify
-      - run: sh scripts/init-env.sh && echo "SIGNUP_RATE_LIMIT=50" >> .env
+      - name: Validate the dual-export OpenTelemetry Collector example
+        run: |
+          docker run --rm -v "$PWD/examples/otel-collector-dual-export/config.yaml:/etc/otelcol/config.yaml:ro" \
+            -e APM_OTLP_ENDPOINT=https://apm.example.com -e APM_AUTH_HEADER=x \
+            -e PARALLAX_ENDPOINT=https://parallax.example.org -e PARALLAX_INGEST_KEY=plx_in_x \
+            otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea \
+            validate --config=/etc/otelcol/config.yaml
+      # .env.example sets COMPOSE_PROFILES=demo, so the demo services start too and
+      # test/e2e/demo.e2e.test.ts can check the public demo against real data.
+      - name: Create .env (random secrets, e2e operator)
+        run: |
+          sh scripts/init-env.sh
+          {
+            echo "SIGNUP_RATE_LIMIT=50"
+            echo "E2E_OPERATOR_EMAIL=e2e-operator@example.org"
+            echo "E2E_OPERATOR_PASSWORD=$(openssl rand -hex 16)"
+          } >> .env
+          sed -i 's/^OPERATOR_EMAILS=.*/OPERATOR_EMAILS=e2e-operator@example.org/' .env
       - run: docker compose up --build -d --wait
       - run: pnpm test:e2e
       - if: failure()

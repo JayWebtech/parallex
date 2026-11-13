@@ -47,14 +47,18 @@ export async function createIngestKey(
 ): Promise<{ key: string; ingestKey: IngestKeyView }> {
   const p = await getProject(deps, userId, projectId);
   if (p.status !== 'active') {
-    throw new ValidationError({ form: 'API analytics can be enabled once the project is approved.' });
+    throw new ValidationError({
+      form: 'API analytics can be enabled once the project is approved.',
+    });
   }
   const [{ value: active } = { value: 0 }] = await deps.db
     .select({ value: count() })
     .from(ingestKey)
     .where(and(eq(ingestKey.projectId, p.id), isNull(ingestKey.revokedAt)));
   if (active >= MAX_ACTIVE_INGEST_KEYS) {
-    throw new ValidationError({ form: `At most ${MAX_ACTIVE_INGEST_KEYS} active keys. Revoke one first.` });
+    throw new ValidationError({
+      form: `At most ${MAX_ACTIVE_INGEST_KEYS} active keys. Revoke one first.`,
+    });
   }
   const key = generateKey('ingest');
   const [row] = await deps.db

@@ -6,3 +6,6 @@ pnpm-lock.yaml
 packages/tracker/versions
 packages/tracker/src/generated.ts
 packages/db/migrations/meta
+**/next-env.d.ts
+.claude
+examples/nextjs-site/out

@@ -2,12 +2,25 @@ import { auditLog, project } from '@parallax/db';
 import { createTestDb } from '@parallax/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ValidationError } from '@/lib/errors';
-import { approveProject, createProject, getSnippet, listPendingProjects } from '@/lib/projects';
+import { NotFoundError, ValidationError } from '@/lib/errors';
+import type { OperatorContext } from '@/lib/operator';
+import {
+  approveProject,
+  listManagedProjects,
+  removeProject,
+  restoreProject,
+} from '@/lib/operator-projects';
+import { createProject, deleteProjectByOwner, getProject, getSnippet } from '@/lib/projects';
 import { setEnrollmentMode } from '@/lib/settings';
 import { TEST_CONTRACT, createUser, testDeps, validInput } from './helpers/deps';
 
 let db: Awaited<ReturnType<typeof createTestDb>>;
+const op: OperatorContext = {
+  actor: 'operator@example.org',
+  scope: 'all',
+  readOnly: false,
+  via: 'session',
+};
 beforeAll(async () => {
   db = await createTestDb();
 });
@@ -101,9 +114,10 @@ describe('approval-required enrollment', () => {
       expect(p.status).toBe('pending');
       expect(p.umamiWebsiteId).toBeNull();
       expect(await getSnippet(deps, owner.id, p.id)).toBeNull();
-      expect((await listPendingProjects(deps)).map((x) => x.id)).toContain(p.id);
+      const pending = await listManagedProjects(deps, op, { status: 'pending' });
+      expect(pending.map((x) => x.id)).toContain(p.id);
 
-      const approved = await approveProject(deps, 'operator@example.org', p.id);
+      const approved = await approveProject(deps, op, p.id);
       expect(approved.status).toBe('active');
       expect(fakeUmami.websites.has(approved.umamiWebsiteId!)).toBe(true);
       expect(await getSnippet(deps, owner.id, p.id)).toContain(approved.umamiWebsiteId!);
@@ -130,8 +144,51 @@ describe('approval-required enrollment', () => {
     const { deps } = testDeps(db.db);
     const owner = await createUser(db.db);
     const p = await createProject(deps, owner.id, validInput());
-    await expect(approveProject(deps, 'operator@example.org', p.id)).rejects.toThrow();
+    await expect(approveProject(deps, op, p.id)).rejects.toThrow();
     const [row] = await db.db.select().from(project).where(eq(project.id, p.id));
     expect(row?.status).toBe('active');
+  });
+});
+
+describe('deleteProjectByOwner ("delete all my project\'s data")', () => {
+  const SCF: OperatorContext = {
+    actor: 'scf@example.org',
+    scope: 'all',
+    readOnly: false,
+    via: 'session',
+  };
+
+  it('requires the exact project name, and only the owner can do it', async () => {
+    const { deps } = testDeps(db.db);
+    const owner = await createUser(db.db);
+    const stranger = await createUser(db.db);
+    const p = await createProject(deps, owner.id, validInput({ name: 'Doomed' }));
+    await expect(deleteProjectByOwner(deps, owner, p.id, { confirm: 'doomed' })).rejects.toThrow(
+      ValidationError,
+    );
+    await expect(deleteProjectByOwner(deps, owner, p.id, null)).rejects.toThrow(ValidationError);
+    await expect(deleteProjectByOwner(deps, stranger, p.id, { confirm: 'Doomed' })).rejects.toThrow(
+      NotFoundError,
+    );
+    expect((await getProject(deps, owner.id, p.id)).status).toBe('active');
+  });
+
+  it('hides the project at once, marks it for immediate purge, audits, and cannot be restored', async () => {
+    const { deps } = testDeps(db.db);
+    const owner = await createUser(db.db);
+    const p = await createProject(deps, owner.id, validInput({ name: 'Gone' }));
+    await deleteProjectByOwner(deps, owner, p.id, { confirm: ' Gone ' });
+    await expect(getProject(deps, owner.id, p.id)).rejects.toThrow(NotFoundError);
+    const [row] = await db.db.select().from(project).where(eq(project.id, p.id));
+    expect(row).toMatchObject({ status: 'removed', removedBy: 'owner' });
+    const audits = await db.db.select().from(auditLog).where(eq(auditLog.targetId, p.id));
+    expect(audits.map((a) => [a.actorEmail, a.action])).toEqual([
+      [owner.email, 'project.delete_by_owner'],
+    ]);
+    await expect(restoreProject(deps, SCF, p.id)).rejects.toThrow(ValidationError);
+    // Operator removals stay restorable.
+    const q = await createProject(deps, owner.id, validInput({ name: 'Kept' }));
+    await removeProject(deps, SCF, q.id, { reason: 'test' });
+    expect((await restoreProject(deps, SCF, q.id)).status).toBe('active');
   });
 });

@@ -1,0 +1,23 @@
+{
+  "name": "@parallax/example-nextjs-site",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Next.js (App Router) example with the Parallax snippet; client-side navigations are tracked too.",
+  "scripts": {
+    "dev": "next dev --port 3100",
+    "build": "next build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

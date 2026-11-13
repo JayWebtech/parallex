@@ -1,17 +1,28 @@
-const LABEL = { active: 'Active', pending: 'Awaiting approval', removed: 'Removed' } as const;
+import { CircleCheck, Clock, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-/** Status is carried by the label text, never by color alone. */
-export function StatusBadge({ status }: { status: keyof typeof LABEL }) {
-  const tone =
-    status === 'active'
-      ? 'text-good border-[var(--good-text)]'
-      : status === 'pending'
-        ? 'bg-warn-bg text-warn-ink border-transparent'
-        : 'text-muted border-line';
+/** Status carried by icon and label, never by color alone. */
+export function StatusBadge({ status }: { status: 'active' | 'pending' | 'removed' }) {
+  if (status === 'active') {
+    return (
+      <Badge variant="outline">
+        <CircleCheck data-icon="inline-start" className="text-success" />
+        Active
+      </Badge>
+    );
+  }
+  if (status === 'pending') {
+    return (
+      <Badge variant="outline" className="bg-warning-surface">
+        <Clock data-icon="inline-start" className="text-warning" />
+        Awaiting approval
+      </Badge>
+    );
+  }
   return (
-    <span className={`text-xs rounded-full border px-2 py-0.5 whitespace-nowrap ${tone}`}>
-      {status === 'active' ? '● ' : status === 'pending' ? '◷ ' : ''}
-      {LABEL[status]}
-    </span>
+    <Badge variant="secondary">
+      <Trash2 data-icon="inline-start" />
+      Removed
+    </Badge>
   );
 }

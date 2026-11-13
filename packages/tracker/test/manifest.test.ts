@@ -82,7 +82,7 @@ describe('buildSnippet', () => {
     expect(html).toBe(
       `<script defer src="https://parallax.example.org${v.scriptPath}" ` +
         `data-website-id="${websiteId}" data-host-url="https://parallax.example.org" ` +
-        `data-do-not-track="true" integrity="${v.sha384}" crossorigin="anonymous"></script>`,
+        `data-do-not-track="true" data-exclude-search="true" integrity="${v.sha384}" crossorigin="anonymous"></script>`,
     );
   });
 

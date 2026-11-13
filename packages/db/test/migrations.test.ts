@@ -16,6 +16,7 @@ describe('migrations', () => {
     expect(rows.map((r) => r.table_name)).toEqual([
       'account',
       'audit_log',
+      'operator_api_key',
       'project',
       'session',
       'setting',
