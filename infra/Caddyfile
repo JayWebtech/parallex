@@ -1,0 +1,37 @@
+# Public edge. SITE_ADDRESS is ":80" locally and the public hostname in
+# production, where Caddy obtains and renews TLS certificates automatically.
+{
+	admin off
+}
+
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	# Event collection: the only Umami path reachable from the internet.
+	# Every collect path ever published stays routed (see packages/tracker).
+	@collect path /p/e
+	handle @collect {
+		# Country comes from our own country-only DB, never from CDN headers.
+		request_header -Cf-Ipcountry
+		request_header -Cf-Ipcity
+		request_header -Cf-Region-Code
+		request_header -X-Vercel-Ip-Country
+		request_header -X-Vercel-Ip-City
+		request_header -Cloudfront-Viewer-Country
+		request_header -Cloudfront-Viewer-City
+		reverse_proxy umami:3000
+	}
+
+	# Everything else (portal UI, auth, tracker scripts under /p/v*/) goes to the portal.
+	handle {
+		reverse_proxy portal:3000
+	}
+
+	# No `log` directive on purpose: access logs would contain client IPs.
+}

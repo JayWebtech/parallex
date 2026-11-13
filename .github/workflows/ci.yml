@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Filter lists change daily; re-check the tracker names every morning.
+    - cron: '17 6 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10.34.9'
+
+jobs:
+  check:
+    name: Lint, typecheck, unit + integration tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.7-alpine3.24@sha256:75dcac3dfb1cd01ca3536910bbc84128759362f8b118bf8c55b38a94f68f3b73
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: corepack enable && corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod --audit-level high
+      - run: pnpm format:check
+      - run: pnpm turbo run build lint typecheck test
+
+  adblock:
+    name: Tracker vs. ad-blocker filter lists
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: corepack enable && corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter=@parallax/tracker
+      - run: pnpm test:adblock
+
+  stack:
+    name: Docker stack + end-to-end isolation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: corepack enable && corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter=@parallax/tracker
+      # The committed tracker must be byte-for-byte derivable from the pinned Umami image.
+      - run: pnpm --filter @parallax/tracker vendor --verify
+      - run: sh scripts/init-env.sh && echo "SIGNUP_RATE_LIMIT=50" >> .env
+      - run: docker compose up --build -d --wait
+      - run: pnpm test:e2e
+      - if: failure()
+        run: docker compose logs --no-color

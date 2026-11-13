@@ -1,0 +1,19 @@
+{
+  "current": "1.0.0",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "scriptPath": "/p/v1.0.0/px.js",
+      "collectPath": "/p/e",
+      "file": "versions/1.0.0/px.js",
+      "sha384": "sha384-+Pi9N7EYNykKt2zdDjFh27h3d4fwMqYGUedJYtMj9d78zYeL+7CqMBRe1E4Gt8ox",
+      "upstream": {
+        "project": "umami",
+        "version": "3.5.0",
+        "image": "ghcr.io/umami-software/umami:3.5.0@sha256:b64f40400d77bcadd39cf5c62a1e368c99524ca442024f96e1133355a19a5dbc",
+        "file": "/app/public/script.js",
+        "sha256": "673c7f43732f4b1bb27965c5121cbd6455746bcd4ccec3f82798f8054475b17e"
+      }
+    }
+  ]
+}

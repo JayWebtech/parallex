@@ -1,0 +1,137 @@
+# Parallax: the whole stack, locally and in production.
+#   local:  pnpm stack:up        (= docker compose up --build, from the repo root)
+#   prod:   see infra/deploy.md  (same file, SITE_ADDRESS set to the public hostname)
+#
+# Every image is pinned to an exact tag AND digest; Renovate proposes updates.
+# Only Caddy publishes public ports. Postgres and Umami bind to 127.0.0.1 for
+# local debugging only; in production leave *_HOST_PORT unset to skip them.
+name: parallax
+
+services:
+  postgres:
+    image: postgres:18.7-alpine3.24@sha256:75dcac3dfb1cd01ca3536910bbc84128759362f8b118bf8c55b38a94f68f3b73
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run scripts/init-env.sh}
+      UMAMI_DB_PASSWORD: ${UMAMI_DB_PASSWORD:?}
+      PARALLAX_OWNER_PASSWORD: ${PARALLAX_OWNER_PASSWORD:?}
+      PARALLAX_APP_PASSWORD: ${PARALLAX_APP_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - 127.0.0.1:${POSTGRES_HOST_PORT:-55432}:5432
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres -d postgres]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  umami:
+    image: ghcr.io/umami-software/umami:3.5.0@sha256:b64f40400d77bcadd39cf5c62a1e368c99524ca442024f96e1133355a19a5dbc
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      geo:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://umami:${UMAMI_DB_PASSWORD}@postgres:5432/umami
+      APP_SECRET: ${UMAMI_APP_SECRET:?}
+      # Neutral collect path (must match packages/tracker/tracker-versions.json).
+      COLLECT_API_ENDPOINT: /p/e
+      # Privacy + supply chain: no outbound calls, no telemetry, no update checks.
+      DISABLE_TELEMETRY: '1'
+      DISABLE_UPDATES: '1'
+      PRIVATE_MODE: '1'
+      # Visitor hash salt rotates daily: no visitor can be linked across days.
+      SALT_ROTATION: day
+      # Country-only geo: our DB has no region/city, and CDN geo headers are ignored.
+      GEOLITE_DB_PATH: /geo/country.mmdb
+      SKIP_LOCATION_HEADERS: '1'
+      # Caddy is the only proxy; trust X-Forwarded-For from the private network.
+      TRUSTED_PROXIES: private
+    volumes:
+      - ./geo/data:/geo:ro
+    ports:
+      - 127.0.0.1:${UMAMI_HOST_PORT:-3001}:3000
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://localhost:3000/api/heartbeat || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  # Downloads the pinned country-only GeoIP DB once (checksum-verified).
+  # Reuses the pinned postgres image (alpine + busybox wget) instead of pulling another one.
+  geo:
+    image: postgres:18.7-alpine3.24@sha256:75dcac3dfb1cd01ca3536910bbc84128759362f8b118bf8c55b38a94f68f3b73
+    entrypoint: [/geo/fetch-geo.sh]
+    volumes:
+      - ./geo:/geo
+    restart: 'no'
+
+  # One-shot: database migrations (as the schema owner) and Umami admin setup.
+  setup:
+    build:
+      context: ..
+      dockerfile: apps/portal/Dockerfile
+      target: builder
+    command: [sh, -c, 'node packages/db/dist/migrate.js && node packages/umami/dist/bootstrap.js']
+    depends_on:
+      postgres:
+        condition: service_healthy
+      umami:
+        condition: service_healthy
+    environment:
+      MIGRATION_DATABASE_URL: postgresql://parallax_owner:${PARALLAX_OWNER_PASSWORD}@postgres:5432/parallax
+      UMAMI_URL: http://umami:3000
+      UMAMI_ADMIN_PASSWORD: ${UMAMI_ADMIN_PASSWORD:?}
+    restart: 'no'
+
+  portal:
+    build:
+      context: ..
+      dockerfile: apps/portal/Dockerfile
+      target: runner
+    restart: unless-stopped
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://parallax_app:${PARALLAX_APP_PASSWORD}@postgres:5432/parallax
+      PUBLIC_URL: ${PUBLIC_URL:?}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
+      UMAMI_URL: http://umami:3000
+      UMAMI_ADMIN_PASSWORD: ${UMAMI_ADMIN_PASSWORD}
+      OPERATOR_EMAILS: ${OPERATOR_EMAILS:-}
+      STELLAR_RPC_MAINNET_URL: ${STELLAR_RPC_MAINNET_URL:-}
+      MAX_PROJECTS_PER_USER: ${MAX_PROJECTS_PER_USER:-10}
+      SIGNUP_RATE_LIMIT: ${SIGNUP_RATE_LIMIT:-5}
+    healthcheck:
+      test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:3000/api/health || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  caddy:
+    image: caddy:2.11.9-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
+    restart: unless-stopped
+    depends_on:
+      portal:
+        condition: service_healthy
+      umami:
+        condition: service_healthy
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - ${HTTP_PORT:-8080}:80
+      - ${HTTPS_PORT:-8443}:443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

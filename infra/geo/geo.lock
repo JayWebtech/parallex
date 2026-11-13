@@ -1,0 +1,8 @@
+# Country-only IP database used by Umami (GEOLITE_DB_PATH). Country level by
+# construction: the file has no region or city data, so Umami stores neither.
+#
+# Source: DB-IP "IP to Country Lite", CC BY 4.0, https://db-ip.com
+# Attribution is required and shown in docs/privacy.md and the portal footer.
+# Update monthly with: infra/geo/fetch-geo.sh --update
+DBIP_MONTH=2026-11
+DBIP_SHA256=75fe430010f6d38a8c4331c202bf0df6ce3221a6e6d823b9e5a6d951e4cf9758

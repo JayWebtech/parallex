@@ -1,0 +1,11 @@
+{
+  "$comment": "Inputs for scripts/vendor.ts. The upstream image must match infra/docker-compose.yml (checked by test/manifest.test.ts). Names were chosen by test/adblock.test.ts.",
+  "upstream": {
+    "project": "umami",
+    "version": "3.5.0",
+    "image": "ghcr.io/umami-software/umami:3.5.0@sha256:b64f40400d77bcadd39cf5c62a1e368c99524ca442024f96e1133355a19a5dbc",
+    "file": "/app/public/script.js",
+    "defaultCollectPath": "/api/send",
+    "license": "MIT, Copyright (c) 2022 Umami Software, Inc."
+  }
+}

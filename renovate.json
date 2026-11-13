@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests", "docker:pinDigests"],
+  "rangeStrategy": "pin",
+  "minimumReleaseAge": "3 days",
+  "packageRules": [
+    {
+      "description": "Umami is upgraded deliberately: a new tracker version must be vendored (packages/tracker) in the same PR.",
+      "matchPackageNames": ["ghcr.io/umami-software/umami"],
+      "automerge": false,
+      "labels": ["umami-upgrade"]
+    }
+  ]
+}

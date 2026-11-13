@@ -1,0 +1,39 @@
+{
+  "name": "parallax-monorepo",
+  "private": true,
+  "description": "Privacy-first, multi-tenant web + API analytics for Stellar ecosystem projects.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "pnpm format:check && turbo run lint typecheck test",
+    "env:init": "sh scripts/init-env.sh",
+    "stack:up": "docker compose up --build -d --wait",
+    "stack:down": "docker compose down",
+    "stack:logs": "docker compose logs -f",
+    "test:e2e": "pnpm --filter @parallax/portal test:e2e",
+    "test:adblock": "pnpm --filter @parallax/tracker test:adblock"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.1.0",
+    "eslint": "10.14.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.14.0",
+    "prettier": "3.9.10",
+    "turbo": "2.11.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2",
+    "vitest": "5.1.0"
+  }
+}

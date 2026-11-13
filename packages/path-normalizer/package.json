@@ -1,0 +1,47 @@
+{
+  "name": "@parallax/path-normalizer",
+  "version": "0.1.0",
+  "description": "Collapse high-cardinality URL paths (Stellar accounts, contracts, tx hashes, UUIDs, IDs, tokens) into stable route templates for API analytics.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "stellar",
+    "soroban",
+    "opentelemetry",
+    "http.route",
+    "path",
+    "normalize",
+    "cardinality",
+    "analytics"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --coverage",
+    "prepack": "pnpm build"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "17.4.0"
+  }
+}

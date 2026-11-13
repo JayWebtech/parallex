@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.next/
+.turbo/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+.cache/
+infra/geo/data/
