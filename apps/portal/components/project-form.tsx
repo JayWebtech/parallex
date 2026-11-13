@@ -51,8 +51,15 @@ export function ProjectForm({ approvalRequired }: { approvalRequired: boolean })
       </label>
       <label className="block space-y-1">
         <span className="text-sm font-medium">Website domain(s)</span>
-        <input name="domains" required placeholder="app.example.org, docs.example.org" className="field" />
-        <span className="text-xs text-muted">Comma-separated hostnames where you will add the snippet.</span>
+        <input
+          name="domains"
+          required
+          placeholder="app.example.org, docs.example.org"
+          className="field"
+        />
+        <span className="text-xs text-muted">
+          Comma-separated hostnames where you will add the snippet.
+        </span>
         {err('domains')}
       </label>
       <label className="block space-y-1">
@@ -75,7 +82,12 @@ export function ProjectForm({ approvalRequired }: { approvalRequired: boolean })
         <span className="text-sm font-medium">
           SCF project link <span className="text-muted font-normal">(optional)</span>
         </span>
-        <input name="scfUrl" type="url" placeholder="https://communityfund.stellar.org/…" className="field" />
+        <input
+          name="scfUrl"
+          type="url"
+          placeholder="https://communityfund.stellar.org/…"
+          className="field"
+        />
         {err('scfUrl')}
       </label>
       {err('form')}

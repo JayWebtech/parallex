@@ -49,7 +49,10 @@ export function OperatorControls(props: {
         ) : (
           <ul className="divide-y divide-[var(--border)]">
             {props.pending.map((p) => (
-              <li key={p.id} className="py-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+              <li
+                key={p.id}
+                className="py-3 flex flex-wrap items-center justify-between gap-3 text-sm"
+              >
                 <div>
                   <div className="font-medium">{p.name}</div>
                   <div className="text-muted">

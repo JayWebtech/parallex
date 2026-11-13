@@ -26,7 +26,8 @@ export function errorResponse(error: unknown): Response {
   if (error instanceof ValidationError) {
     return Response.json({ error: 'invalid', fields: error.fieldErrors }, { status: 400 });
   }
-  if (error instanceof ForbiddenError) return Response.json({ error: 'forbidden' }, { status: 403 });
+  if (error instanceof ForbiddenError)
+    return Response.json({ error: 'forbidden' }, { status: 403 });
   console.error(error);
   return Response.json({ error: 'internal' }, { status: 500 });
 }

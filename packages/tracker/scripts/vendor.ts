@@ -64,7 +64,9 @@ function derive(source: Buffer, version: string, collectPath: string): string {
   const text = source.toString('utf8');
   const occurrences = text.split(upstream.defaultCollectPath).length - 1;
   if (occurrences !== 1) {
-    throw new Error(`expected exactly one "${upstream.defaultCollectPath}" in upstream, found ${occurrences}`);
+    throw new Error(
+      `expected exactly one "${upstream.defaultCollectPath}" in upstream, found ${occurrences}`,
+    );
   }
   const banner =
     `/*! Parallax tracker ${version}. Derived from ${upstream.project} v${upstream.version} ` +
@@ -113,7 +115,8 @@ if (values.verify) {
     cache.set(entry.upstream.image, source);
     const ok =
       sha('sha256', source, 'hex') === entry.upstream.sha256 &&
-      derive(source, entry.version, entry.collectPath) === readFileSync(join(root, entry.file), 'utf8');
+      derive(source, entry.version, entry.collectPath) ===
+        readFileSync(join(root, entry.file), 'utf8');
     console.log(`${ok ? 'ok  ' : 'FAIL'} ${entry.version}`);
     failed ||= !ok;
   }

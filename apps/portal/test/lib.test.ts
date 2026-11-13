@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { parseRange } from '@/lib/ranges';
 import { fillSeries, parseBucket } from '@/lib/series';
-import { checkStellarIdExists, contractInstanceKey, describeMissing, parseStellarId } from '@/lib/stellar';
+import {
+  checkStellarIdExists,
+  contractInstanceKey,
+  describeMissing,
+  parseStellarId,
+} from '@/lib/stellar';
 import { toTotals } from '@/lib/web-analytics';
 import { TEST_ACCOUNT, TEST_CONTRACT } from './helpers/deps';
 
@@ -20,7 +25,9 @@ describe('parseRange', () => {
   });
 
   it('parses an inclusive custom UTC range', () => {
-    expect(parseRange({ range: 'custom', from: '2026-11-01', to: '2026-11-03' }, NOW)).toMatchObject({
+    expect(
+      parseRange({ range: 'custom', from: '2026-11-01', to: '2026-11-03' }, NOW),
+    ).toMatchObject({
       key: 'custom',
       startAt: Date.UTC(2026, 10, 1),
       endAt: Date.UTC(2026, 10, 4) - 1,
@@ -57,7 +64,9 @@ describe('fillSeries', () => {
 
 describe('toTotals', () => {
   it('derives bounce rate and average visit duration', () => {
-    expect(toTotals({ pageviews: 30, visitors: 8, visits: 10, bounces: 4, totaltime: 600 })).toEqual({
+    expect(
+      toTotals({ pageviews: 30, visitors: 8, visits: 10, bounces: 4, totaltime: 600 }),
+    ).toEqual({
       pageviews: 30,
       visitors: 8,
       visits: 10,
@@ -67,7 +76,9 @@ describe('toTotals', () => {
   });
 
   it('handles empty ranges', () => {
-    expect(toTotals({ pageviews: 0, visitors: 0, visits: 0, bounces: 0, totaltime: 0 })).toMatchObject({
+    expect(
+      toTotals({ pageviews: 0, visitors: 0, visits: 0, bounces: 0, totaltime: 0 }),
+    ).toMatchObject({
       bounceRate: 0,
       avgVisitSeconds: 0,
     });
@@ -76,9 +87,19 @@ describe('toTotals', () => {
 
 describe('Stellar ID checks', () => {
   it('parses accounts and contracts and rejects secrets and muxed addresses', () => {
-    expect(parseStellarId(` ${TEST_ACCOUNT} `)).toEqual({ ok: true, id: TEST_ACCOUNT, kind: 'account' });
-    expect(parseStellarId(TEST_CONTRACT)).toEqual({ ok: true, id: TEST_CONTRACT, kind: 'contract' });
-    expect(parseStellarId('SB6K5QLO3JZ2LIQ2EXEAR7KU7Z7WTCIR2JFDSOJII7HKK2AVPLYRB6ZL')).toMatchObject({
+    expect(parseStellarId(` ${TEST_ACCOUNT} `)).toEqual({
+      ok: true,
+      id: TEST_ACCOUNT,
+      kind: 'account',
+    });
+    expect(parseStellarId(TEST_CONTRACT)).toEqual({
+      ok: true,
+      id: TEST_CONTRACT,
+      kind: 'contract',
+    });
+    expect(
+      parseStellarId('SB6K5QLO3JZ2LIQ2EXEAR7KU7Z7WTCIR2JFDSOJII7HKK2AVPLYRB6ZL'),
+    ).toMatchObject({
       ok: false,
       error: expect.stringContaining('secret seed'),
     });
@@ -113,16 +134,28 @@ describe('Stellar ID checks', () => {
     };
     const result = await checkStellarIdExists(TEST_CONTRACT, 'contract', endpoints, f);
     expect(JSON.parse(body).params.keys).toEqual([contractInstanceKey(TEST_CONTRACT)]);
-    expect(result).toEqual({ found: false, checked: ['testnet'], failed: [], unconfigured: ['mainnet'] });
+    expect(result).toEqual({
+      found: false,
+      checked: ['testnet'],
+      failed: [],
+      unconfigured: ['mainnet'],
+    });
     if (!result.found) {
-      expect(describeMissing('contract', result)).toMatch(/not found on testnet.*mainnet are not enabled/);
+      expect(describeMissing('contract', result)).toMatch(
+        /not found on testnet.*mainnet are not enabled/,
+      );
     }
   });
 
   it('reports network failures separately from "not found"', async () => {
     const f: typeof fetch = async () => new Response('down', { status: 503 });
     const result = await checkStellarIdExists(TEST_ACCOUNT, 'account', endpoints, f);
-    expect(result).toEqual({ found: false, checked: [], failed: ['mainnet', 'testnet'], unconfigured: [] });
+    expect(result).toEqual({
+      found: false,
+      checked: [],
+      failed: ['mainnet', 'testnet'],
+      unconfigured: [],
+    });
     if (!result.found) expect(describeMissing('account', result)).toMatch(/couldn't reach/);
   });
 });

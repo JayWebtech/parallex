@@ -29,7 +29,10 @@ export default async function ProjectsPage() {
         <ul className="grid gap-3 sm:grid-cols-2">
           {projects.map((p) => (
             <li key={p.id}>
-              <Link href={`/projects/${p.id}`} className="card p-4 block hover:border-[var(--axis)]">
+              <Link
+                href={`/projects/${p.id}`}
+                className="card p-4 block hover:border-[var(--axis)]"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium">{p.name}</span>
                   <StatusBadge status={p.status} />

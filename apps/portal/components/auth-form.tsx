@@ -64,11 +64,17 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       <p className="text-sm text-ink-2">
         {isSignUp ? (
           <>
-            Already enrolled? <Link href="/sign-in" className="underline">Sign in</Link>
+            Already enrolled?{' '}
+            <Link href="/sign-in" className="underline">
+              Sign in
+            </Link>
           </>
         ) : (
           <>
-            New here? <Link href="/sign-up" className="underline">Create an account</Link>
+            New here?{' '}
+            <Link href="/sign-up" className="underline">
+              Create an account
+            </Link>
           </>
         )}
       </p>

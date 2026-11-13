@@ -95,7 +95,11 @@ export async function readWebsite(
     pageviews.pageviews.map((p) => ({ x: p.x, pageviews: p.y, visits: visitsAt.get(p.x) ?? 0 })),
     { ...window, unit: range.unit },
     { pageviews: 0, visits: 0 },
-  ).map(({ t, pageviews: pv, visits }) => ({ x: new Date(t).toISOString(), pageviews: pv, visits }));
+  ).map(({ t, pageviews: pv, visits }) => ({
+    x: new Date(t).toISOString(),
+    pageviews: pv,
+    visits,
+  }));
   return {
     status: 'active',
     range: { ...window, unit: range.unit },

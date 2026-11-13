@@ -8,6 +8,9 @@ export { schema };
 
 export type Database = NodePgDatabase<typeof schema>;
 
+// DATE columns as 'YYYY-MM-DD' strings, never local-time Date objects.
+pg.types.setTypeParser(pg.types.builtins.DATE, (v) => v);
+
 export interface DbHandle {
   db: Database;
   pool: pg.Pool;

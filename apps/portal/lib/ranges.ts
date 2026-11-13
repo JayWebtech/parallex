@@ -57,7 +57,13 @@ export function parseRange(
     case '24h':
       return { key: '24h', label: 'Last 24 hours', startAt: now - DAY, endAt: now, unit: 'hour' };
     case '30d':
-      return { key: '30d', label: 'Last 30 days', startAt: now - 30 * DAY, endAt: now, unit: 'day' };
+      return {
+        key: '30d',
+        label: 'Last 30 days',
+        startAt: now - 30 * DAY,
+        endAt: now,
+        unit: 'day',
+      };
     default:
       return { key: '7d', label: 'Last 7 days', startAt: now - 7 * DAY, endAt: now, unit: 'day' };
   }

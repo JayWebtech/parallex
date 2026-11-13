@@ -117,7 +117,10 @@ describe('approval-required enrollment', () => {
 
   it('records enrollment mode changes in the audit log', async () => {
     const { deps } = testDeps(db.db);
-    const rows = await db.db.select().from(auditLog).where(eq(auditLog.action, 'enrollment_mode.set'));
+    const rows = await db.db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'enrollment_mode.set'));
     expect(rows.length).toBeGreaterThanOrEqual(2);
     expect(rows.every((r) => r.actorEmail === 'operator@example.org')).toBe(true);
     expect(deps).toBeDefined();

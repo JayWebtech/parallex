@@ -76,16 +76,37 @@ export default async function ProjectDashboard(props: {
       ) : (
         <>
           <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
-            <KpiTile label="Unique visitors" value={formatCount(web.totals.visitors)}
-              current={web.totals.visitors} previous={web.previous.visitors} />
-            <KpiTile label="Visits" value={formatCount(web.totals.visits)}
-              current={web.totals.visits} previous={web.previous.visits} />
-            <KpiTile label="Pageviews" value={formatCount(web.totals.pageviews)}
-              current={web.totals.pageviews} previous={web.previous.pageviews} />
-            <KpiTile label="Bounce rate" value={formatPercent(web.totals.bounceRate)}
-              current={web.totals.bounceRate} previous={web.previous.bounceRate} lowerIsBetter />
-            <KpiTile label="Avg. visit duration" value={formatDuration(web.totals.avgVisitSeconds)}
-              current={web.totals.avgVisitSeconds} previous={web.previous.avgVisitSeconds} />
+            <KpiTile
+              label="Unique visitors"
+              value={formatCount(web.totals.visitors)}
+              current={web.totals.visitors}
+              previous={web.previous.visitors}
+            />
+            <KpiTile
+              label="Visits"
+              value={formatCount(web.totals.visits)}
+              current={web.totals.visits}
+              previous={web.previous.visits}
+            />
+            <KpiTile
+              label="Pageviews"
+              value={formatCount(web.totals.pageviews)}
+              current={web.totals.pageviews}
+              previous={web.previous.pageviews}
+            />
+            <KpiTile
+              label="Bounce rate"
+              value={formatPercent(web.totals.bounceRate)}
+              current={web.totals.bounceRate}
+              previous={web.previous.bounceRate}
+              lowerIsBetter
+            />
+            <KpiTile
+              label="Avg. visit duration"
+              value={formatDuration(web.totals.avgVisitSeconds)}
+              current={web.totals.avgVisitSeconds}
+              previous={web.previous.avgVisitSeconds}
+            />
           </div>
 
           <section className="card p-4">
@@ -96,8 +117,11 @@ export default async function ProjectDashboard(props: {
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <BarList title="Pages" unit="views" rows={web.breakdowns.path} />
             <BarList title="Referrers" unit="visitors" rows={web.breakdowns.referrer} />
-            <BarList title="Countries" unit="visitors"
-              rows={web.breakdowns.country.map((r) => ({ ...r, label: countryName(r.label) }))} />
+            <BarList
+              title="Countries"
+              unit="visitors"
+              rows={web.breakdowns.country.map((r) => ({ ...r, label: countryName(r.label) }))}
+            />
             <BarList title="Devices" unit="visitors" rows={web.breakdowns.device} />
             <BarList title="Browsers" unit="visitors" rows={web.breakdowns.browser} />
             <BarList title="Operating systems" unit="visitors" rows={web.breakdowns.os} />

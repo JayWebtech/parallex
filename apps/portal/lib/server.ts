@@ -27,7 +27,10 @@ export function getDeps(): Deps {
       }),
       stellar: {
         endpoints: {
-          horizon: { mainnet: e.STELLAR_HORIZON_MAINNET_URL, testnet: e.STELLAR_HORIZON_TESTNET_URL },
+          horizon: {
+            mainnet: e.STELLAR_HORIZON_MAINNET_URL,
+            testnet: e.STELLAR_HORIZON_TESTNET_URL,
+          },
           rpc: {
             testnet: e.STELLAR_RPC_TESTNET_URL,
             ...(e.STELLAR_RPC_MAINNET_URL ? { mainnet: e.STELLAR_RPC_MAINNET_URL } : {}),

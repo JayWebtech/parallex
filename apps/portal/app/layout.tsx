@@ -55,7 +55,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <main className="mx-auto w-full max-w-6xl px-4 py-8 flex-1">{children}</main>
         <footer className="border-t border-line text-xs text-muted">
           <div className="mx-auto max-w-6xl px-4 py-4 flex flex-wrap gap-x-6 gap-y-1">
-            <span>No cookies on tracked sites. No IP addresses stored. Country-level location only.</span>
+            <span>
+              No cookies on tracked sites. No IP addresses stored. Country-level location only.
+            </span>
             <span>
               IP geolocation by{' '}
               <a className="underline" href="https://db-ip.com">

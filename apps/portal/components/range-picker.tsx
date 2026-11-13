@@ -12,7 +12,11 @@ export function RangePicker({ basePath, range }: { basePath: string; range: Rang
   const today = new Date().toISOString().slice(0, 10);
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
-      <div className="inline-flex rounded-lg border border-line bg-surface p-0.5" role="group" aria-label="Time range">
+      <div
+        className="inline-flex rounded-lg border border-line bg-surface p-0.5"
+        role="group"
+        aria-label="Time range"
+      >
         {PRESETS.map((p) => (
           <Link
             key={p.key}
@@ -27,10 +31,29 @@ export function RangePicker({ basePath, range }: { basePath: string; range: Rang
       </div>
       <form method="get" action={basePath} className="inline-flex items-center gap-1">
         <input type="hidden" name="range" value="custom" />
-        <input type="date" name="from" max={today} defaultValue={range.from} required className="field !w-auto !py-1 text-sm" aria-label="From" />
+        <input
+          type="date"
+          name="from"
+          max={today}
+          defaultValue={range.from}
+          required
+          className="field !w-auto !py-1 text-sm"
+          aria-label="From"
+        />
         <span className="text-muted">→</span>
-        <input type="date" name="to" max={today} defaultValue={range.to} required className="field !w-auto !py-1 text-sm" aria-label="To" />
-        <button type="submit" className={`btn !py-1 ${range.key === 'custom' ? 'font-semibold' : ''}`}>
+        <input
+          type="date"
+          name="to"
+          max={today}
+          defaultValue={range.to}
+          required
+          className="field !w-auto !py-1 text-sm"
+          aria-label="To"
+        />
+        <button
+          type="submit"
+          className={`btn !py-1 ${range.key === 'custom' ? 'font-semibold' : ''}`}
+        >
           Apply
         </button>
       </form>

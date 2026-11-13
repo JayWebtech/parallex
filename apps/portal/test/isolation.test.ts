@@ -47,7 +47,7 @@ const scopedCalls = {
 };
 
 describe.each(Object.entries(scopedCalls))('%s', (_name, call) => {
-  it("lets an owner read their own project", async () => {
+  it('lets an owner read their own project', async () => {
     await expect(call(alice.id, aliceProject.id)).resolves.toBeDefined();
   });
 
@@ -57,7 +57,13 @@ describe.each(Object.entries(scopedCalls))('%s', (_name, call) => {
   });
 
   it('returns the same not-found for unknown and malformed IDs', async () => {
-    for (const id of [randomUUID(), 'not-a-uuid', "' OR 1=1 --", '', aliceProject.umamiWebsiteId!]) {
+    for (const id of [
+      randomUUID(),
+      'not-a-uuid',
+      "' OR 1=1 --",
+      '',
+      aliceProject.umamiWebsiteId!,
+    ]) {
       await expect(call(bob.id, id)).rejects.toBeInstanceOf(NotFoundError);
     }
   });
@@ -80,7 +86,7 @@ describe('Umami access', () => {
 });
 
 describe('listing', () => {
-  it("shows each tenant only their own projects", async () => {
+  it('shows each tenant only their own projects', async () => {
     expect((await listProjects(deps, alice.id)).map((p) => p.id)).toEqual([aliceProject.id]);
     expect((await listProjects(deps, bob.id)).map((p) => p.id)).toEqual([bobProject.id]);
   });

@@ -30,15 +30,7 @@ export type TimeUnit = 'minute' | 'hour' | 'day' | 'month' | 'year';
 
 /** Dimensions Parallax shows. Umami supports more (see metricsQuerySchema upstream). */
 export type MetricType =
-  | 'path'
-  | 'referrer'
-  | 'browser'
-  | 'os'
-  | 'device'
-  | 'country'
-  | 'hostname'
-  | 'entry'
-  | 'exit';
+  'path' | 'referrer' | 'browser' | 'os' | 'device' | 'country' | 'hostname' | 'entry' | 'exit';
 
 export class UmamiError extends Error {
   constructor(
@@ -151,7 +143,10 @@ export class UmamiClient {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) query.set(key, String(value));
     }
-    return this.#request('GET', `/api/websites/${encodeURIComponent(websiteId)}/${endpoint}?${query}`);
+    return this.#request(
+      'GET',
+      `/api/websites/${encodeURIComponent(websiteId)}/${endpoint}?${query}`,
+    );
   }
 
   async #request(method: string, path: string, body?: unknown): Promise<unknown> {
@@ -189,7 +184,12 @@ export class UmamiClient {
     }
   }
 
-  async #send(method: string, path: string, token: string | null, body?: unknown): Promise<unknown> {
+  async #send(
+    method: string,
+    path: string,
+    token: string | null,
+    body?: unknown,
+  ): Promise<unknown> {
     const headers: Record<string, string> = { accept: 'application/json' };
     if (token) headers.authorization = `Bearer ${token}`;
     if (body !== undefined) headers['content-type'] = 'application/json';

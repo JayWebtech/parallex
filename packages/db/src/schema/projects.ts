@@ -21,7 +21,10 @@ export const project = portal.table(
       .references(() => user.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     /** Hostnames the project will embed the snippet on (informational, shown to operators). */
-    domains: text('domains').array().notNull().default(sql`'{}'::text[]`),
+    domains: text('domains')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     /** Stellar account (G…) or contract (C…) that represents the project. */
     stellarId: text('stellar_id').notNull(),
     stellarIdKind: stellarIdKind('stellar_id_kind').notNull(),
@@ -38,10 +41,7 @@ export const project = portal.table(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     removedAt: timestamp('removed_at', { withTimezone: true }),
   },
-  (t) => [
-    index('project_owner_id_idx').on(t.ownerId),
-    index('project_status_idx').on(t.status),
-  ],
+  (t) => [index('project_owner_id_idx').on(t.ownerId), index('project_status_idx').on(t.status)],
 );
 
 /** Global key/value settings, e.g. `enrollment_mode`. */

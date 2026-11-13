@@ -15,13 +15,19 @@ import { PROJECT_ROUTES } from './routes';
 
 const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:8080';
 /** Native XLM asset contract on testnet: part of the protocol, always deployed. */
-const STELLAR_ID = process.env.E2E_STELLAR_ID ?? 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
+const STELLAR_ID =
+  process.env.E2E_STELLAR_ID ?? 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
 const BROWSER_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
 
 class Session {
   cookie = '';
-  async request(method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
+  async request(
+    method: string,
+    path: string,
+    body?: unknown,
+    headers: Record<string, string> = {},
+  ) {
     const res = await fetch(`${BASE}${path}`, {
       method,
       redirect: 'manual',
@@ -73,7 +79,11 @@ async function websiteId(s: Session, projectId: string): Promise<string> {
 async function sendPageview(website: string, path: string) {
   const res = await fetch(`${BASE}${currentTracker().collectPath}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'user-agent': BROWSER_UA, origin: 'https://tenant.example.org' },
+    headers: {
+      'content-type': 'application/json',
+      'user-agent': BROWSER_UA,
+      origin: 'https://tenant.example.org',
+    },
     body: JSON.stringify({
       type: 'event',
       payload: {
@@ -107,7 +117,7 @@ describe.each(PROJECT_ROUTES)('$method $file', (route) => {
     expect(res.status).toBe(route.operatorOnly ? 404 : 200);
   });
 
-  it("answers another tenant with 404", async () => {
+  it('answers another tenant with 404', async () => {
     expect((await bob.request(route.method, route.path(aliceProject))).status).toBe(404);
     expect((await alice.request(route.method, route.path(bobProject))).status).toBe(404);
   });
@@ -148,11 +158,14 @@ describe('collection and dashboards', () => {
     expect(JSON.stringify(b)).not.toContain('/alice/');
   });
 
-  it("a tenant cannot inject events into an unknown website", async () => {
+  it('a tenant cannot inject events into an unknown website', async () => {
     const res = await fetch(`${BASE}${currentTracker().collectPath}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'user-agent': BROWSER_UA },
-      body: JSON.stringify({ type: 'event', payload: { website: randomUUID(), hostname: 'x', url: '/' } }),
+      body: JSON.stringify({
+        type: 'event',
+        payload: { website: randomUUID(), hostname: 'x', url: '/' },
+      }),
     });
     expect(res.status).toBeGreaterThanOrEqual(400);
   });
@@ -166,7 +179,12 @@ describe('listing and CSRF', () => {
   });
 
   it('rejects cross-origin mutations', async () => {
-    const res = await alice.request('POST', '/api/projects', { name: 'x' }, { origin: 'https://evil.example' });
+    const res = await alice.request(
+      'POST',
+      '/api/projects',
+      { name: 'x' },
+      { origin: 'https://evil.example' },
+    );
     expect(res.status).toBe(403);
   });
 });

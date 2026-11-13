@@ -45,8 +45,7 @@ export default async function SetupPage({ params }: { params: Promise<{ projectI
             </li>
             <li>
               No cookies and nothing written to browser storage; no IP addresses stored;
-              country-level location only.
-              Browsers sending Do Not Track are not counted.
+              country-level location only. Browsers sending Do Not Track are not counted.
             </li>
             <li>Single-page apps are tracked automatically on route changes.</li>
           </ul>

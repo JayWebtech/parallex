@@ -40,7 +40,8 @@ export async function getProject(
   return row;
 }
 
-const HOSTNAME = /^(?=.{1,253}$)(?:localhost|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9-]{2,63})$/;
+const HOSTNAME =
+  /^(?=.{1,253}$)(?:localhost|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9-]{2,63})$/;
 
 /** Accepts hostnames or pasted URLs; returns lowercase hostnames. */
 function parseDomains(raw: string | string[]): string[] | string {
@@ -64,7 +65,12 @@ export const createProjectInput = z.object({
     .trim()
     .optional()
     .transform((v) => (v ? v : undefined))
-    .pipe(z.url({ protocol: /^https$/, error: 'Use an https:// link.' }).max(300).optional()),
+    .pipe(
+      z
+        .url({ protocol: /^https$/, error: 'Use an https:// link.' })
+        .max(300)
+        .optional(),
+    ),
 });
 
 /**
@@ -72,15 +78,12 @@ export const createProjectInput = z.object({
  * on mainnet or testnet), enforces the per-user limit, and either activates
  * the project right away (open enrollment) or leaves it pending for an operator.
  */
-export async function createProject(
-  deps: Deps,
-  userId: string,
-  input: unknown,
-): Promise<Project> {
+export async function createProject(deps: Deps, userId: string, input: unknown): Promise<Project> {
   const parsed = createProjectInput.safeParse(input);
   if (!parsed.success) {
     const fields: Record<string, string> = {};
-    for (const issue of parsed.error.issues) fields[String(issue.path[0] ?? 'form')] ??= issue.message;
+    for (const issue of parsed.error.issues)
+      fields[String(issue.path[0] ?? 'form')] ??= issue.message;
     throw new ValidationError(fields);
   }
   const { name, scfUrl } = parsed.data;
@@ -96,7 +99,9 @@ export async function createProject(
     .from(project)
     .where(and(eq(project.ownerId, userId), ne(project.status, 'removed')));
   if (owned >= deps.maxProjectsPerUser) {
-    throw new ValidationError({ form: `You can enroll at most ${deps.maxProjectsPerUser} projects.` });
+    throw new ValidationError({
+      form: `You can enroll at most ${deps.maxProjectsPerUser} projects.`,
+    });
   }
 
   const existence = await checkStellarIdExists(
@@ -121,7 +126,10 @@ export async function createProject(
   };
 
   if ((await getEnrollmentMode(deps)) === 'approval_required') {
-    const [row] = await deps.db.insert(project).values({ ...values, status: 'pending' }).returning();
+    const [row] = await deps.db
+      .insert(project)
+      .values({ ...values, status: 'pending' })
+      .returning();
     return row!;
   }
 
@@ -145,7 +153,9 @@ export async function getSnippet(
   id: string,
 ): Promise<string | null> {
   const p = await getProject(deps, userId, id);
-  return p.umamiWebsiteId ? buildSnippet({ origin: deps.publicUrl, websiteId: p.umamiWebsiteId }) : null;
+  return p.umamiWebsiteId
+    ? buildSnippet({ origin: deps.publicUrl, websiteId: p.umamiWebsiteId })
+    : null;
 }
 
 /** Operator action: activates a pending project and creates its Umami website. */
@@ -179,5 +189,9 @@ export async function approveProject(deps: Deps, actorEmail: string, id: string)
 
 /** Operator view of projects waiting for approval. */
 export async function listPendingProjects(deps: Pick<Deps, 'db'>): Promise<Project[]> {
-  return deps.db.select().from(project).where(eq(project.status, 'pending')).orderBy(project.createdAt);
+  return deps.db
+    .select()
+    .from(project)
+    .where(eq(project.status, 'pending'))
+    .orderBy(project.createdAt);
 }

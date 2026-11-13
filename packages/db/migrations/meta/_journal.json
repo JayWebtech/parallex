@@ -15,6 +15,20 @@
       "when": 1794566186316,
       "tag": "0001_app_role_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794567126273,
+      "tag": "0002_api_metrics",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794567126728,
+      "tag": "0003_api_metrics_functions_and_grants",
+      "breakpoints": true
     }
   ]
 }

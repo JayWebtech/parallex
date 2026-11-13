@@ -10,8 +10,7 @@ export interface StellarEndpoints {
 }
 
 export type ParsedStellarId =
-  | { ok: true; id: string; kind: StellarIdKind }
-  | { ok: false; error: string };
+  { ok: true; id: string; kind: StellarIdKind } | { ok: false; error: string };
 
 /** Accepts a G… account or C… contract, validated by StrKey checksum. */
 export function parseStellarId(input: string): ParsedStellarId {
@@ -19,7 +18,10 @@ export function parseStellarId(input: string): ParsedStellarId {
   if (StrKey.isValidEd25519PublicKey(id)) return { ok: true, id, kind: 'account' };
   if (StrKey.isValidContract(id)) return { ok: true, id, kind: 'contract' };
   if (StrKey.isValidEd25519SecretSeed(id)) {
-    return { ok: false, error: 'That is a secret seed. Never share it; rotate it if it was exposed.' };
+    return {
+      ok: false,
+      error: 'That is a secret seed. Never share it; rotate it if it was exposed.',
+    };
   }
   if (StrKey.isValidMed25519PublicKey(id)) {
     return { ok: false, error: 'Use the base G… account, not a muxed M… address.' };
@@ -125,7 +127,9 @@ export function describeMissing(
     return `We couldn't reach ${result.failed.join(' and ')} to check this ${what}. Please try again in a minute.`;
   }
   const notFound =
-    result.checked.length > 0 ? `This ${what} was not found on ${result.checked.join(' or ')}.` : '';
+    result.checked.length > 0
+      ? `This ${what} was not found on ${result.checked.join(' or ')}.`
+      : '';
   if (result.unconfigured.length > 0) {
     return `${notFound} Contract lookups on ${result.unconfigured.join(' and ')} are not enabled on this deployment.`.trim();
   }

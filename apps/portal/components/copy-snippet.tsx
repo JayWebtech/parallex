@@ -6,7 +6,9 @@ export function CopySnippet({ snippet }: { snippet: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="space-y-2">
-      <pre className="card p-4 text-xs font-mono whitespace-pre-wrap break-all select-all">{snippet}</pre>
+      <pre className="card p-4 text-xs font-mono whitespace-pre-wrap break-all select-all">
+        {snippet}
+      </pre>
       <button
         type="button"
         className="btn"

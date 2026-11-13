@@ -31,8 +31,7 @@ export default function Home() {
         </li>
         <li className="card p-4">
           <strong className="block text-ink mb-1">Pinned</strong>
-          The tracker script is version-pinned with Subresource Integrity. It never updates
-          itself.
+          The tracker script is version-pinned with Subresource Integrity. It never updates itself.
         </li>
       </ul>
     </section>

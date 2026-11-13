@@ -55,9 +55,12 @@ export class FakeUmami {
   }
 
   readonly fetch: typeof fetch = async (input, init) => {
-    const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input : input.url);
+    const url = new URL(
+      typeof input === 'string' ? input : input instanceof URL ? input : input.url,
+    );
     const method = init?.method ?? 'GET';
-    const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as Record<string, string>) : {};
+    const body =
+      typeof init?.body === 'string' ? (JSON.parse(init.body) as Record<string, string>) : {};
     const websiteId = /^\/api\/websites\/([^/]+)/.exec(url.pathname)?.[1];
     this.calls.push({ method, path: url.pathname, websiteId });
 
@@ -109,7 +112,9 @@ export class FakeUmami {
       });
     }
     if (method === 'GET' && endpoint === 'metrics') {
-      return json(200, [{ x: `${url.searchParams.get('type')}:${site.name}`, y: site.stats.pageviews }]);
+      return json(200, [
+        { x: `${url.searchParams.get('type')}:${site.name}`, y: site.stats.pageviews },
+      ]);
     }
     if (method === 'GET' && endpoint === 'active') {
       return json(200, { visitors: 0 });
