@@ -20,6 +20,20 @@ const config: NextConfig = {
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
   serverExternalPackages: ['@node-rs/argon2', 'pg'],
   poweredByHeader: false,
+  async rewrites() {
+    const umamiUrl = (process.env.UMAMI_URL ?? 'http://127.0.0.1:3001').replace(/\/+$/, '');
+    const collectorUrl = (process.env.COLLECTOR_URL ?? 'http://127.0.0.1:4318').replace(/\/+$/, '');
+    return [
+      {
+        source: '/p/e',
+        destination: `${umamiUrl}/p/e`,
+      },
+      {
+        source: '/v1/:path*',
+        destination: `${collectorUrl}/v1/:path*`,
+      },
+    ];
+  },
   async headers() {
     return [
       {

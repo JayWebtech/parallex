@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1.7
+ARG NODE_IMAGE=node:24.22.3-alpine3.24@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5
+
+FROM ${NODE_IMAGE} AS base
+ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH NEXT_TELEMETRY_DISABLED=1
+RUN corepack enable && corepack prepare pnpm@10.34.9 --activate
+
+FROM base AS builder
+WORKDIR /repo
+COPY . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm exec turbo run build --filter=@parallax/collector...
+RUN pnpm --filter @parallax/collector deploy --prod --legacy /out/collector
+
+FROM ${NODE_IMAGE}
+WORKDIR /app
+ENV NODE_ENV=production PORT=4318
+COPY --from=builder /out/collector ./
+USER node
+EXPOSE 4318
+CMD ["node", "dist/main.js"]
