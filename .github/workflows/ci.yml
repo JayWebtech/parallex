@@ -71,7 +71,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - run: corepack enable && corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
       - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo run build --filter=@parallax/tracker
+      # The e2e tests import workspace packages (tracker, db, shared): build them all.
+      - run: pnpm turbo run build --filter='@parallax/portal^...'
       # The committed tracker must be byte-for-byte derivable from the pinned Umami image.
       - run: pnpm --filter @parallax/tracker vendor --verify
       - name: Validate the dual-export OpenTelemetry Collector example
