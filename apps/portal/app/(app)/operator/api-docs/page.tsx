@@ -83,6 +83,8 @@ export default async function ApiDocsPage() {
               </div>
               <CodeBlock
                 label="Example"
+                language="shell"
+                title="Terminal"
                 code={`curl -H "Authorization: Bearer $PARALLAX_OPERATOR_KEY" \\\n  "${origin}${path}?range=30d"`}
               />
             </CardContent>

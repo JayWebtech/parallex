@@ -23,8 +23,13 @@ describe('route inventory', () => {
     expect(scoped.filter((f) => !covered.has(f))).toEqual([]);
   });
 
-  /** Routes that are public on purpose. Everything else must use a guard. */
-  const PUBLIC = /app\/api\/auth\/|app\/api\/health\/|app\/p\/|app\/api\/v1\/openapi\.json\//;
+  /**
+   * Routes that are public on purpose. Everything else must use a guard.
+   * app/v1/ proxies OTLP to the collector on hosts without Caddy; the collector
+   * authenticates every request by its ingest key.
+   */
+  const PUBLIC =
+    /app\/api\/auth\/|app\/api\/health\/|app\/p\/|app\/api\/v1\/openapi\.json\/|app\/v1\//;
 
   it('every other API route uses withUser, withOperator or withOperatorKey', async () => {
     const { readFileSync } = await import('node:fs');

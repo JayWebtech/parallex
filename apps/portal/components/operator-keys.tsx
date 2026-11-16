@@ -215,8 +215,13 @@ export function OperatorKeys({
           </DialogHeader>
           {fresh && (
             <div className="flex flex-col gap-3">
-              <CodeBlock code={fresh} label="Operator key" />
-              <CodeBlock code={curlExample.replace('KEY', fresh)} label="Example request" />
+              <CodeBlock code={fresh} label="Operator key" title="Operator key" />
+              <CodeBlock
+                code={curlExample.replace('KEY', fresh)}
+                label="Example request"
+                language="shell"
+                title="Terminal"
+              />
             </div>
           )}
           <DialogFooter>

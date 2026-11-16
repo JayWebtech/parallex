@@ -1,7 +1,10 @@
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  const umamiUrl = (process.env.UMAMI_URL || 'http://umami.railway.internal:3000').replace(/\/+$/, '');
+  const umamiUrl = (process.env.UMAMI_URL || 'http://umami.railway.internal:3000').replace(
+    /\/+$/,
+    '',
+  );
   const url = `${umamiUrl}/p/e`;
 
   const headers = new Headers(req.headers);

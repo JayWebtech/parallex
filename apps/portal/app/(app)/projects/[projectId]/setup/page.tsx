@@ -2,6 +2,7 @@ import { Clock, Cookie, Globe, Lock, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { currentTracker } from '@parallax/tracker';
 import { CodeBlock } from '@/components/code-block';
+import { prettyTag } from '@/lib/highlight';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -73,7 +74,12 @@ export default async function SetupPage(props: { params: Promise<{ projectId: st
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CodeBlock code={snippet} label="Snippet" />
+              <CodeBlock
+                code={prettyTag(snippet)}
+                label="Snippet"
+                language="html"
+                title="Inside <head> on every page"
+              />
             </CardContent>
             <CardFooter className="flex-col items-start gap-3">
               <p className="text-sm text-muted-foreground">
