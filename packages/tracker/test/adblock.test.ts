@@ -4,6 +4,7 @@
  * `pnpm --filter @parallax/tracker test:adblock`; CI runs it on every push.
  */
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { get } from 'node:https';
 import { dirname, join } from 'node:path';
 import { FiltersEngine, Request } from '@ghostery/adblocker';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -29,12 +30,43 @@ async function loadList(name: string, url: string): Promise<string> {
   if (existsSync(file) && Date.now() - statSync(file).mtimeMs < DAY_MS) {
     return readFileSync(file, 'utf8');
   }
-  const res = await fetch(url, { signal: AbortSignal.timeout(120_000) });
-  if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
-  const text = await res.text();
+  const text = await download(url).catch((error: Error) => {
+    throw new Error(`${name}: ${error.message}`);
+  });
   mkdirSync(cacheDir, { recursive: true });
   writeFileSync(file, text);
   return text;
+}
+
+/**
+ * GET with node:https rather than fetch: Node's bundled undici can throw an
+ * uncaught internal assertion (`assert(!this.paused)`) when a pooled
+ * connection closes during parallel downloads, which fails the run even though
+ * every test passed. Follows up to 5 redirects.
+ */
+function download(url: string, redirects = 5): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const req = get(url, { headers: { 'user-agent': 'parallax-adblock-test' } }, (res) => {
+      const status = res.statusCode ?? 0;
+      if (status >= 300 && status < 400 && res.headers.location && redirects > 0) {
+        res.resume();
+        resolve(download(new URL(res.headers.location, url).toString(), redirects - 1));
+        return;
+      }
+      if (status !== 200) {
+        res.resume();
+        reject(new Error(`HTTP ${status}`));
+        return;
+      }
+      res.setEncoding('utf8');
+      let body = '';
+      res.on('data', (chunk: string) => (body += chunk));
+      res.on('end', () => resolve(body));
+      res.on('error', reject);
+    });
+    req.setTimeout(120_000, () => req.destroy(new Error('timed out')));
+    req.on('error', reject);
+  });
 }
 
 type Kind = 'script' | 'xmlhttprequest';

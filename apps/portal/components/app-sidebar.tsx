@@ -23,7 +23,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import type { ComponentProps } from 'react';
-import { Logo } from '@/components/logo';
+import { LogoMark } from '@/components/logo';
+import { PRODUCT_NAME } from '@parallax/shared';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -86,6 +87,18 @@ const OPERATOR_VIEWS = [
   { href: '/operator/api-docs', label: 'API docs', icon: BookOpen },
 ] as const;
 
+/** A project's first letter on a small tile; never shrinks, so it survives the collapsed rail. */
+function ProjectInitial({ name }: { name: string }) {
+  return (
+    <span
+      aria-hidden
+      className="flex size-4 shrink-0 items-center justify-center rounded-[5px] bg-sidebar-foreground/12 text-[10px] leading-none font-semibold text-sidebar-foreground"
+    >
+      {name.trim()[0]?.toUpperCase() ?? '?'}
+    </span>
+  );
+}
+
 const initials = (name: string, email: string) =>
   (name.trim() || email)
     .split(/[\s@.]+/)
@@ -108,8 +121,15 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/projects" />}>
-              <Logo />
+            <SidebarMenuButton size="lg" tooltip={PRODUCT_NAME} render={<Link href="/projects" />}>
+              {/* 32px tile: exactly the collapsed button, so it stays square when the text hides. */}
+              <span className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-brand text-white">
+                <LogoMark className="size-4" />
+              </span>
+              <span className="grid flex-1 text-left leading-tight">
+                <span className="truncate font-semibold tracking-tight">{PRODUCT_NAME}</span>
+                <span className="truncate text-xs text-muted-foreground">Web & API analytics</span>
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -142,16 +162,37 @@ export function AppSidebar({
                     tooltip={p.name}
                     render={<Link href={`/projects/${p.id}`} />}
                   >
-                    <span className="flex size-4 items-center justify-center rounded-sm bg-muted text-[10px] font-semibold">
-                      {p.name[0]?.toUpperCase()}
-                    </span>
+                    <ProjectInitial name={p.name} />
                     <span className="truncate">{p.name}</span>
                     {p.status === 'pending' && (
-                      <Badge variant="outline" className="ml-auto">
+                      <Badge
+                        variant="outline"
+                        className="ml-auto group-data-[collapsible=icon]:hidden"
+                      >
                         Pending
                       </Badge>
                     )}
                   </SidebarMenuButton>
+                  {open && (
+                    // Collapsed: the open project's views as icon buttons (the sub-menu hides).
+                    <div className="hidden flex-col gap-1 pt-1 group-data-[collapsible=icon]:flex">
+                      {PROJECT_VIEWS.map((v) => {
+                        const href = `/projects/${p.id}${v.suffix}`;
+                        return (
+                          <SidebarMenuButton
+                            key={v.suffix}
+                            size="sm"
+                            isActive={pathname === href}
+                            tooltip={`${p.name} · ${v.label}`}
+                            render={<Link href={href} />}
+                          >
+                            <v.icon />
+                            <span>{v.label}</span>
+                          </SidebarMenuButton>
+                        );
+                      })}
+                    </div>
+                  )}
                   {open && (
                     <SidebarMenuSub>
                       {PROJECT_VIEWS.map((v) => {

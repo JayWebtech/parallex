@@ -49,6 +49,22 @@
   --status-4xx: #fab219;
   --status-5xx: #d03b3b;
 
+  /* Code panels are dark in both themes; these colors are tuned for that surface. */
+  --code-bg: oklch(0.2 0.006 270);
+  --code-bar: oklch(0.24 0.006 270);
+  --code-border: oklch(1 0 0 / 9%);
+  --code-fg: #e6edf3;
+  --code-muted: #8b949e;
+  --code-punct: #8b949e;
+  --code-tag: #7ee787;
+  --code-attr: #d2a8ff;
+  --code-string: #a5d6ff;
+  --code-key: #79c0ff;
+  --code-number: #79c0ff;
+  --code-command: #ff7b72;
+  --code-flag: #d2a8ff;
+  --code-placeholder: #ffa657;
+
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -135,6 +151,11 @@
   --color-status-3xx: var(--status-3xx);
   --color-status-4xx: var(--status-4xx);
   --color-status-5xx: var(--status-5xx);
+  --color-code-bg: var(--code-bg);
+  --color-code-bar: var(--code-bar);
+  --color-code-border: var(--code-border);
+  --color-code-fg: var(--code-fg);
+  --color-code-muted: var(--code-muted);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

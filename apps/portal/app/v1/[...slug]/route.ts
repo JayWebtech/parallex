@@ -1,8 +1,10 @@
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
-  const collectorUrl = (process.env.COLLECTOR_URL || 'http://collector.railway.internal:4318').replace(/\/+$/, '');
+  const collectorUrl = (
+    process.env.COLLECTOR_URL || 'http://collector.railway.internal:4318'
+  ).replace(/\/+$/, '');
   const url = `${collectorUrl}/v1/${slug.join('/')}`;
 
   const headers = new Headers(req.headers);

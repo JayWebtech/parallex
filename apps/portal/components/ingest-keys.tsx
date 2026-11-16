@@ -197,14 +197,24 @@ export function IngestKeys(props: {
                 With OpenTelemetry auto-instrumentation, set these environment variables. Metrics
                 come here; traces keep going to your own APM.
               </p>
-              <CodeBlock code={withKey(props.snippets.node)} label="Environment variables" />
+              <CodeBlock
+                code={withKey(props.snippets.node)}
+                label="Environment variables"
+                language="shell"
+                title=".env"
+              />
             </TabsContent>
             <TabsContent value="collector" className="flex flex-col gap-3 pt-2">
               <p className="text-sm text-muted-foreground">
                 Run an OpenTelemetry Collector with two exporters: everything to your APM, and only
                 HTTP server duration metrics here.
               </p>
-              <CodeBlock code={withKey(props.snippets.collector)} label="Collector config" />
+              <CodeBlock
+                code={withKey(props.snippets.collector)}
+                label="Collector config"
+                language="yaml"
+                title="otelcol-config.yaml"
+              />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -219,7 +229,7 @@ export function IngestKeys(props: {
               it.
             </DialogDescription>
           </DialogHeader>
-          {fresh && <CodeBlock code={fresh} label="Ingest key" />}
+          {fresh && <CodeBlock code={fresh} label="Ingest key" title="Ingest key" />}
           <DialogFooter>
             <Button onClick={() => setDialogOpen(false)}>Done</Button>
           </DialogFooter>
